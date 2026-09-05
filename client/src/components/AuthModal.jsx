@@ -34,23 +34,51 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   useEffect(() => {
     if (!isOpen) return;
 
-    if (googleClientId && window.google?.accounts?.id) {
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleGoogleCredentialResponse,
-        auto_select: false
-      });
+    let intervalId = null;
 
-      if (googleBtnRef.current) {
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'filled_black',
-          size: 'large',
-          width: 300,
-          text: 'continue_with',
-          shape: 'rectangular'
-        });
+    const setupGoogleBtn = () => {
+      if (googleClientId && window.google?.accounts?.id && googleBtnRef.current) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false
+          });
+
+          googleBtnRef.current.innerHTML = '';
+
+          window.google.accounts.id.renderButton(googleBtnRef.current, {
+            theme: 'filled_black',
+            size: 'large',
+            width: 320,
+            text: 'continue_with',
+            shape: 'rectangular',
+            logo_alignment: 'left'
+          });
+
+          if (intervalId) clearInterval(intervalId);
+        } catch (e) {
+          console.warn('Google GSI modal render error:', e);
+        }
       }
+    };
+
+    setupGoogleBtn();
+
+    if (googleClientId && !window.google?.accounts?.id) {
+      let attempts = 0;
+      intervalId = setInterval(() => {
+        attempts++;
+        if (window.google?.accounts?.id) {
+          setupGoogleBtn();
+        }
+        if (attempts > 12) clearInterval(intervalId);
+      }, 250);
     }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [isOpen, googleClientId]);
 
   if (!isOpen) return null;
@@ -84,12 +112,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     }
   };
 
-  // Direct Google Sign In for dev
-  const handleDirectGoogleLogin = async (customEmail = null) => {
+  // Direct Dev Sign In when GOOGLE_CLIENT_ID is not configured
+  const handleDirectDevLogin = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!devEmail || !devEmail.trim()) {
+      setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg('');
 
-    const email = (customEmail || devEmail || 'user@gmail.com').trim().toLowerCase();
+    const email = devEmail.trim().toLowerCase();
     const name = email.split('@')[0];
 
     try {
@@ -166,7 +200,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             <GoogleIcon size={22} />
           </div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
-            Sign In with Google
+            Sign In to AlgoTracker
           </h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Single sign-on to isolate and protect your competitive programming profile.
@@ -189,18 +223,45 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         )}
 
         {/* Google OAuth Button Container */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          <div ref={googleBtnRef}></div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', width: '100%' }}>
+          {googleClientId ? (
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%', minHeight: '44px' }}>
+              <div ref={googleBtnRef}></div>
+            </div>
+          ) : (
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div style={{
+                padding: '0.65rem 0.85rem',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(56, 189, 248, 0.08)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                fontSize: '0.76rem',
+                color: 'var(--text-muted)',
+                lineHeight: 1.4
+              }}>
+                <strong style={{ color: '#38bdf8' }}>Google OAuth:</strong> Add <code style={{ color: '#38bdf8' }}>GOOGLE_CLIENT_ID</code> to <code style={{ color: '#38bdf8' }}>server/.env</code> to enable official Google Sign-In.
+              </div>
 
-          <button 
-            onClick={() => handleDirectGoogleLogin()}
-            disabled={isLoading}
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}
-          >
-            <GoogleIcon size={16} />
-            <span>{isLoading ? 'Authenticating...' : 'Sign In with Google'}</span>
-          </button>
+              <form onSubmit={handleDirectDevLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <input 
+                  type="email" 
+                  value={devEmail} 
+                  onChange={(e) => setDevEmail(e.target.value)} 
+                  placeholder="Enter email (e.g. user@gmail.com)"
+                  className="input-field"
+                  style={{ width: '100%', fontSize: '0.85rem', padding: '0.5rem 0.75rem' }}
+                />
+                <button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="btn btn-primary"
+                  style={{ width: '100%', padding: '0.55rem', fontSize: '0.85rem', fontWeight: 700 }}
+                >
+                  <span>{isLoading ? 'Signing In...' : 'Sign In (Dev Mode)'}</span>
+                </button>
+              </form>
+            </div>
+          )}
         </div>
 
         <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem', textAlign: 'center' }}>

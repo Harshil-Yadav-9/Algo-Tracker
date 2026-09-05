@@ -50,23 +50,53 @@ export default function AccountPage({
   useEffect(() => {
     if (currentUser) return;
 
-    if (googleClientId && window.google?.accounts?.id) {
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleGoogleCredentialResponse,
-        auto_select: false
-      });
+    let intervalId = null;
 
-      if (googleBtnRef.current) {
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'filled_black',
-          size: 'large',
-          width: 280,
-          text: 'continue_with',
-          shape: 'rectangular'
-        });
+    const setupGoogleBtn = () => {
+      if (googleClientId && window.google?.accounts?.id && googleBtnRef.current) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false
+          });
+
+          // Clear previous render if any
+          googleBtnRef.current.innerHTML = '';
+
+          window.google.accounts.id.renderButton(googleBtnRef.current, {
+            theme: 'filled_black',
+            size: 'large',
+            width: 320,
+            text: 'continue_with',
+            shape: 'rectangular',
+            logo_alignment: 'left'
+          });
+
+          if (intervalId) clearInterval(intervalId);
+        } catch (e) {
+          console.warn('Google GSI render error:', e);
+        }
       }
+    };
+
+    setupGoogleBtn();
+
+    // Check every 250ms for up to 3s in case script is still loading
+    if (googleClientId && !window.google?.accounts?.id) {
+      let attempts = 0;
+      intervalId = setInterval(() => {
+        attempts++;
+        if (window.google?.accounts?.id) {
+          setupGoogleBtn();
+        }
+        if (attempts > 12) clearInterval(intervalId);
+      }, 250);
     }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [currentUser, googleClientId]);
 
   // Handle Google Token
@@ -97,12 +127,18 @@ export default function AccountPage({
     }
   };
 
-  // Direct login
-  const handleDirectLogin = async (customEmail = null) => {
+  // Direct login for development/testing when GOOGLE_CLIENT_ID is not configured
+  const handleDirectLogin = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!devEmail || !devEmail.trim()) {
+      setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg('');
 
-    const email = (customEmail || devEmail || 'developer@gmail.com').trim().toLowerCase();
+    const email = devEmail.trim().toLowerCase();
     const name = email.split('@')[0];
 
     try {
@@ -323,33 +359,82 @@ export default function AccountPage({
         )}
 
         {/* Google OAuth Button Container */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <div ref={googleBtnRef}></div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', width: '100%' }}>
+          {googleClientId ? (
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%', minHeight: '44px' }}>
+              <div ref={googleBtnRef}></div>
+            </div>
+          ) : (
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div style={{
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(56, 189, 248, 0.08)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                fontSize: '0.78rem',
+                color: 'var(--text-muted)',
+                lineHeight: 1.5
+              }}>
+                <strong style={{ color: '#38bdf8' }}>Google OAuth Setup:</strong> Add your <code style={{ color: '#38bdf8' }}>GOOGLE_CLIENT_ID</code> to <code style={{ color: '#38bdf8' }}>server/.env</code> to enable genuine Google Single Sign-On.
+              </div>
 
-          {/* Quick Sign In button */}
-          <button 
-            onClick={() => handleDirectLogin()}
-            disabled={isLoading}
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}
-          >
-            <GoogleIcon size={16} />
-            <span>{isLoading ? 'Signing In...' : 'Continue with Google'}</span>
-          </button>
+              {/* Dev Sign-In Form */}
+              <form onSubmit={handleDirectLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                  Local Dev Sign-In
+                </div>
+                <input 
+                  type="email" 
+                  value={devEmail} 
+                  onChange={(e) => setDevEmail(e.target.value)} 
+                  placeholder="Enter your email (e.g. yourname@gmail.com)"
+                  className="input-field"
+                  style={{ width: '100%', fontSize: '0.85rem', padding: '0.55rem 0.8rem' }}
+                />
+                <button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="btn btn-primary"
+                  style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}
+                >
+                  <User size={15} />
+                  <span>{isLoading ? 'Signing In...' : 'Sign In (Dev Mode)'}</span>
+                </button>
+              </form>
+            </div>
+          )}
         </div>
 
         {/* Platform Supported Icons */}
-        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
             Supported Platforms
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <PlatformIcon platformKey="codeforces" size={20} />
-            <PlatformIcon platformKey="leetcode" size={20} />
-            <PlatformIcon platformKey="atcoder" size={20} />
-            <PlatformIcon platformKey="codechef" size={20} />
-            <PlatformIcon platformKey="gfg" size={20} />
-            <PlatformIcon platformKey="hackerrank" size={20} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <div title="Codeforces" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+              <PlatformIcon platformKey="codeforces" size={18} />
+              <span>Codeforces</span>
+            </div>
+            <div title="LeetCode" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+              <PlatformIcon platformKey="leetcode" size={18} />
+              <span>LeetCode</span>
+            </div>
+            <div title="AtCoder" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+              <PlatformIcon platformKey="atcoder" size={18} />
+              <span>AtCoder</span>
+            </div>
+            <div title="CodeChef" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+              <PlatformIcon platformKey="codechef" size={18} />
+              <span>CodeChef</span>
+            </div>
+            <div title="GeeksforGeeks" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+              <PlatformIcon platformKey="gfg" size={18} />
+              <span>GeeksforGeeks</span>
+            </div>
+            <div title="HackerRank" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+              <PlatformIcon platformKey="hackerrank" size={18} />
+              <span>HackerRank</span>
+            </div>
           </div>
         </div>
 

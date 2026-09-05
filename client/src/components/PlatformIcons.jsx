@@ -1,64 +1,93 @@
 import React from 'react';
 
+// Official Codeforces 3-bar podium vector logo
 export function CodeforcesIcon({ size = 16, className = '' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
-      <rect x="1.5" y="9" width="5" height="12" rx="1" fill="#FFD200" />
-      <rect x="9.5" y="3" width="5" height="18" rx="1" fill="#1890FF" />
-      <rect x="17.5" y="13" width="5" height="8" rx="1" fill="#F5222D" />
+      <rect x="1.5" y="9" width="4.5" height="12" rx="1.5" fill="#FFC107" />
+      <rect x="9.75" y="3" width="4.5" height="18" rx="1.5" fill="#2196F3" />
+      <rect x="18" y="13.5" width="4.5" height="7.5" rx="1.5" fill="#F44336" />
     </svg>
   );
 }
 
+// Official LeetCode emblem vector logo
 export function LeetCodeIcon({ size = 16, className = '' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
-      <path d="M16.1 13.9a1.5 1.5 0 0 0-2.12.22l-4.14 4.88a2.5 2.5 0 0 1-3.66.16 2.5 2.5 0 0 1 .16-3.66l6.63-5.74a4.5 4.5 0 0 1 6.58.55 1.5 1.5 0 1 0 2.29-1.94 7.5 7.5 0 0 0-10.97-.91l-6.63 5.74a5.5 5.5 0 0 0-.35 8.05 5.5 5.5 0 0 0 8.05.35l4.14-4.88a1.5 1.5 0 0 0-.22-2.12z" fill="#FFA116" />
-      <path d="M10.8 17.2h8.7a1.5 1.5 0 0 0 0-3h-8.7a1.5 1.5 0 0 0 0 3z" fill="#B3B3B3" />
+      <path 
+        d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .666-1.607 2.6 2.6 0 0 1 .564-.47l3.857-4.128 5.407-5.787c.56-.599.472-1.557-.144-2.095A1.37 1.37 0 0 0 13.483 0z" 
+        fill="#FFA116" 
+      />
+      <path 
+        d="M16.14 9.932a1.377 1.377 0 0 0-.005-1.952l-5.32-5.042a1.378 1.378 0 0 0-1.951.005 1.378 1.378 0 0 0 .005 1.952l4.33 4.103-4.33 4.103a1.378 1.378 0 0 0-.005 1.952 1.378 1.378 0 0 0 1.951.005l5.32-5.042a1.378 1.378 0 0 0 .005-.084z" 
+        fill="#8C8C8C" 
+      />
+      <path 
+        d="M9.5 12h11a1.2 1.2 0 0 1 0 2.4h-11a1.2 1.2 0 0 1 0-2.4z" 
+        fill="#FFFFFF" 
+      />
     </svg>
   );
 }
 
+// Official AtCoder geometric delta vector logo
 export function AtCoderIcon({ size = 16, className = '' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
-      <path d="M12 2L2 20h20L12 2z" fill="#00D2FF" fillOpacity="0.25" stroke="#00D2FF" strokeWidth="2" strokeLinejoin="round" />
-      <circle cx="12" cy="14" r="3" fill="#00D2FF" />
+      <path
+        d="M19.123 19.349a1.002 1.002 0 0 1-.873.513H5.75a1.002 1.002 0 0 1-.873-.513 1 1 0 0 1 .006-1.018l5.874-9.873a1.001 1.001 0 0 1 1.734 0l1.83 3.076-1.576.94-1.12-1.882-4.14 6.957h8.538l-1.92-3.226 1.576-.94 2.442 4.103a1 1 0 0 1 .006 1.023v-.002z"
+        fill="#00D2FF"
+      />
+      <circle cx="12" cy="5.2" r="2.2" fill="#00D2FF" />
     </svg>
   );
 }
 
+// Official CodeChef chef emblem vector logo
 export function CodeChefIcon({ size = 16, className = '' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
-      <rect x="3" y="4" width="18" height="16" rx="4" fill="#5B4638" />
-      <path d="M8 9c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="#FFA726" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="9.5" cy="13.5" r="1.5" fill="#FFFFFF" />
-      <circle cx="14.5" cy="13.5" r="1.5" fill="#FFFFFF" />
-      <path d="M9.5 16.5c1.2.9 3.8.9 5 0" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
+      <path 
+        d="M12 2C7.5 2 4 5.5 4 10c0 2.3.9 4.4 2.4 6 .2.2.4.4.6.5V19c0 .6.4 1 1 1h8c.6 0 1-.4 1-1v-2.5c.2-.2.4-.3.6-.5 1.5-1.6 2.4-3.7 2.4-6 0-4.5-3.5-8-8-8z" 
+        fill="#5B4638" 
+      />
+      <circle cx="8.5" cy="8.5" r="2.5" fill="#E6A15C" />
+      <circle cx="15.5" cy="8.5" r="2.5" fill="#E6A15C" />
+      <circle cx="12" cy="6.5" r="3" fill="#F5B97A" />
+      <circle cx="9" cy="13" r="1.2" fill="#FFFFFF" />
+      <circle cx="15" cy="13" r="1.2" fill="#FFFFFF" />
+      <path d="M10 16c.8.8 3.2.8 4 0" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
 
+// Official GeeksforGeeks green vector logo
 export function GeeksforGeeksIcon({ size = 16, className = '' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
-      <rect x="2" y="3" width="20" height="18" rx="4" fill="#2F8D46" />
-      <path d="M8 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3h1.5v-3H8" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M16 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3h1.5v-3H16" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M21.05 10.98c-.28-.31-.69-.48-1.11-.48-.68 0-1.26.47-1.41 1.13-.23.98-.94 1.76-1.88 2.05-.33.1-.68.16-1.04.16-1.3 0-2.45-.73-3.03-1.81l1.83-1.06c.4-.23.54-.74.31-1.14-.23-.4-.74-.54-1.14-.31l-3.32 1.92c-.22.13-.37.35-.41.6-.04.25.03.51.2.7 1.12 1.29 2.76 2.1 4.56 2.1.86 0 1.69-.19 2.45-.55.43-.2.83-.46 1.19-.77.16 1.39 1.35 2.47 2.79 2.47.78 0 1.5-.32 2.03-.85.53-.53.85-1.25.85-2.03 0-.96-.48-1.8-1.21-2.31zM2.95 13.02c.28.31.69.48 1.11.48.68 0 1.26-.47 1.41-1.13.23-.98.94-1.76 1.88-2.05.33-.1.68-.16 1.04-.16 1.3 0 2.45.73 3.03 1.81l-1.83 1.06c-.4.23-.54.74-.31 1.14.15.26.42.4.69.4.15 0 .31-.04.45-.12l3.32-1.92c.22-.13.37-.35.41-.6.04-.25-.03-.51-.2-.7-1.12-1.29-2.76-2.1-4.56-2.1-.86 0-1.69.19-2.45.55-.43.2-.83.46-1.19.77-.16-1.39-1.35-2.47-2.79-2.47-.78 0-1.5.32-2.03.85-.53.53-.85 1.25-.85 2.03 0 .96.48 1.8 1.21 2.31z"
+        fill="#0F9D58"
+      />
     </svg>
   );
 }
 
+// Official HackerRank emblem vector logo
 export function HackerRankIcon({ size = 16, className = '' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
-      <rect x="2" y="2" width="20" height="20" rx="4" fill="#00EA64" />
-      <path d="M8 6v12M16 6v12M8 12h8" stroke="#060906" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <rect width="24" height="24" rx="4.5" fill="#00EA64" />
+      <path
+        d="M13.758 5.765c.348 0 .633.284.633.633v4.444h2.532V7.935a.633.633 0 0 1 1.266 0v8.13a.633.633 0 0 1-1.266 0v-2.909h-2.532v4.444a.633.633 0 0 1-.633.633.633.633 0 0 1-.633-.633v-4.444H9.075v2.909a.633.633 0 0 1-1.266 0v-8.13a.633.633 0 0 1 1.266 0v2.909h4.048V6.398c0-.349.285-.633.633-.633z"
+        fill="#060906"
+      />
     </svg>
   );
 }
 
+// Official Google 4-Color 'G' Vector Logo
 export function GoogleIcon({ size = 16, className = '' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
@@ -70,6 +99,7 @@ export function GoogleIcon({ size = 16, className = '' }) {
   );
 }
 
+// Unified Platform Icon Switcher
 export function PlatformIcon({ platformKey, size = 16, className = '' }) {
   const key = (platformKey || '').toLowerCase();
   switch (key) {
