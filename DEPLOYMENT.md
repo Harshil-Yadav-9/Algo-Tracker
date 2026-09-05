@@ -36,7 +36,7 @@ AlgoTracker is fully configured for deployment with **Render (Backend API)** + *
    - `MONGODB_URI`: `mongodb+srv://<username>:<password>@cluster.mongodb.net/algotracker?retryWrites=true&w=majority&appName=algotracker`
    - `JWT_SECRET`: `your_secure_random_jwt_secret_key`
    - `GOOGLE_CLIENT_ID`: `your_google_client_id.apps.googleusercontent.com`
-   - `ADMIN_EMAIL`: `your_email@gmail.com` *(Sign in with this Google account to get superuser Admin Explorer privileges)*
+   - `ADMIN_EMAIL`: `your_email@gmail.com` *(Optional admin email)*
 6. Click **Deploy Web Service** and copy your backend URL (e.g. `https://algotracker-api.onrender.com`).
 
 ---

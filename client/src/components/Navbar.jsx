@@ -1,5 +1,6 @@
 import React from 'react';
 import { 
+  Terminal,
   Trophy, 
   Code2, 
   Calendar, 
@@ -50,31 +51,31 @@ export default function Navbar({
         }}>
           {/* Brand Logo */}
           <div 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}
             onClick={() => setActiveTab('dashboard')}
           >
             <div style={{
-              width: '34px',
-              height: '34px',
+              width: '32px',
+              height: '32px',
               borderRadius: 'var(--radius-sm)',
-              background: 'rgba(16, 185, 129, 0.12)',
-              border: '1px solid rgba(16, 185, 129, 0.35)',
+              background: '#0d1c0d',
+              border: '1px solid #22c55e',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--accent-green)'
+              color: '#22c55e'
             }}>
-              <Code2 size={20} strokeWidth={2.5} />
+              <Terminal size={18} strokeWidth={2.5} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <h1 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-                  Algo<span style={{ color: 'var(--accent-green)' }}>Tracker</span>
+                <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f0fdf4', letterSpacing: '-0.02em' }}>
+                  algo<span style={{ color: '#22c55e' }}>::tracker</span>
                 </h1>
                 <span className="pulse-dot" title="Live Auto-Sync Active"></span>
               </div>
-              <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-                Multi-Platform Competitive Programming
+              <p style={{ fontSize: '0.68rem', color: '#4ade80aa' }}>
+                multi-platform cp tracker
               </p>
             </div>
           </div>

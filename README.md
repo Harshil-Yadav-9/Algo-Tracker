@@ -50,10 +50,9 @@
 - All user profiles, solved problem caches, bookmarks, editorial notes, and POTD streaks are stored exclusively in **MongoDB**.
 - `localStorage` holds zero sensitive data.
 
-### 4. 👑 Superuser Admin Console & Universal Handle Explorer
-- Configure `ADMIN_EMAIL` with your Google email to gain root administrator privileges.
-- **Universal Handle Explorer**: Inspect any competitive programmer on earth on-the-fly without changing your account binding.
-- **User Directory**: View registered users, bound accounts, and manage database records.
+### 4. 📝 Problem Notes & Revision Bookmarks
+- **Personal Problem Notebook**: Write approach notes, edge cases, and key complexity takeaways for any question.
+- **Revision Filters**: Bookmark tricky problems and filter by topic or difficulty for targeted practice.
 
 ### 5. 📅 Contests Hub & Daily POTD Engine
 - Aggregates upcoming contest schedules across all major platforms with direct contest links and countdown timers.
@@ -149,7 +148,7 @@ algotracker/
 │   ├── config/
 │   │   └── db.js               # MongoDB Adapter + Local JSON Fallback DB
 │   ├── middleware/
-│   │   └── auth.js             # JWT Verification & Superuser Admin Guard
+│   │   └── auth.js             # JWT Verification Middleware
 │   ├── models/
 │   │   ├── User.js             # MongoDB User Schema (Google ID + Handles)
 │   │   └── Problem.js          # Solved Problems Schema with Indexing
@@ -262,13 +261,6 @@ AlgoTracker is pre-configured for deployment with **Render (Backend)** and **Ver
 | `POST` | `/api/sync` | Aggregate and fetch full submission history | User / Admin |
 | `GET` | `/api/contests` | Upcoming & live CP contest calendar | Public |
 | `GET` | `/api/potd` | Problem of the Day cross-platform feed | Public |
-
-### 🛡️ Admin Superuser (`/api/admin`)
-| Method | Endpoint | Description | Access |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/admin/status` | Database health, total users, problem count | Superuser |
-| `GET` | `/api/admin/users` | List all registered users and bound handles | Superuser |
-| `DELETE` | `/api/admin/user/:id` | Remove a user and associated data from MongoDB | Superuser |
 
 ---
 
