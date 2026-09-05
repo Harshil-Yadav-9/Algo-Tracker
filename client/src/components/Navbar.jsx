@@ -1,5 +1,6 @@
 import React from 'react';
 import { 
+  Terminal,
   Trophy, 
   Code2, 
   Calendar, 
@@ -53,31 +54,19 @@ export default function Navbar({
             style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}
             onClick={() => setActiveTab('dashboard')}
           >
-            {/* AT Monogram Logo Mark */}
             <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
-              background: 'radial-gradient(circle at 40% 40%, #0f1f0f, #030703)',
-              border: '1px solid rgba(34, 197, 94, 0.45)',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              background: '#080d08',
+              border: '1.5px solid #22c55e',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 0 10px rgba(34, 197, 94, 0.18), inset 0 0 6px rgba(34, 197, 94, 0.06)',
-              flexShrink: 0
+              color: '#22c55e',
+              boxShadow: '0 0 8px rgba(34, 197, 94, 0.35), 0 0 2px rgba(34, 197, 94, 0.2) inset'
             }}>
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="atGrad" x1="0" y1="0" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#4ade80"/>
-                    <stop offset="100%" stopColor="#22c55e"/>
-                  </linearGradient>
-                </defs>
-                {/* A */}
-                <path d="M2 17L7 5L12 17M4 13H10" stroke="url(#atGrad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                {/* T */}
-                <path d="M13 5H21M17 5V17" stroke="url(#atGrad)" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+              <Terminal size={18} strokeWidth={2.5} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>

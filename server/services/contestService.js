@@ -1,4 +1,5 @@
 // Contests Aggregator Service (Codeforces, LeetCode, AtCoder, CodeChef, HackerRank)
+import * as cheerio from 'cheerio';
 
 let contestsCache = null;
 let lastFetchTime = 0;
@@ -15,7 +16,8 @@ export async function getUpcomingContests() {
   // 1. Fetch Codeforces Contests
   try {
     const cfRes = await fetch('https://codeforces.com/api/contest.list?gym=false', {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(6000)
     }).then(r => r.json());
 
     if (cfRes.status === 'OK' && Array.isArray(cfRes.result)) {
@@ -40,7 +42,7 @@ export async function getUpcomingContests() {
             durationSeconds,
             durationFormatted: formatDuration(durationSeconds),
             status: isOngoing ? 'ONGOING' : 'UPCOMING',
-            type: c.type || 'CF',
+            type: c.type || 'Codeforces Round',
             in24Hours: startTimeMs - now <= 24 * 3600 * 1000 && startTimeMs >= now
           });
         });
@@ -67,7 +69,8 @@ export async function getUpcomingContests() {
             }
           }
         `
-      })
+      }),
+      signal: AbortSignal.timeout(6000)
     }).then(r => r.json()).catch(() => null);
 
     if (lcRes?.data?.allContests && Array.isArray(lcRes.data.allContests)) {
@@ -93,7 +96,7 @@ export async function getUpcomingContests() {
               durationSeconds,
               durationFormatted: formatDuration(durationSeconds),
               status: isOngoing ? 'ONGOING' : 'UPCOMING',
-              type: 'LeetCode Weekly/Biweekly',
+              type: 'Weekly / Biweekly Contest',
               in24Hours: startTimeMs - now <= 24 * 3600 * 1000 && startTimeMs >= now
             });
           }
@@ -103,52 +106,85 @@ export async function getUpcomingContests() {
     console.warn('Error fetching LeetCode contests:', err.message);
   }
 
-  // 3. Kontests API / AtCoder & CodeChef fallback
+  // 3. Fetch AtCoder Contests (Scraped from official upcoming schedule)
   try {
-    const kontests = await fetch('https://kontests.net/api/v1/all', {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    }).then(r => r.json()).catch(() => null);
+    const acHtml = await fetch('https://atcoder.jp/contests/', {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(6000)
+    }).then(r => r.text());
 
-    if (Array.isArray(kontests)) {
-      kontests.forEach((k, idx) => {
-        const startTimeMs = new Date(k.start_time).getTime();
-        const endTimeMs = new Date(k.end_time).getTime();
-        const durationSeconds = parseInt(k.duration, 10) || Math.round((endTimeMs - startTimeMs) / 1000);
+    const $ = cheerio.load(acHtml);
+    $('#contest-table-upcoming tbody tr').each((_, el) => {
+      const timeStr = $(el).find('time.fixtime-full, time').first().text().trim();
+      const a = $(el).find('a[href^="/contests/"]').last();
+      const name = a.text().trim();
+      const href = a.attr('href');
+      const durationStr = $(el).find('td').eq(2).text().trim();
 
-        if (endTimeMs > now) {
-          const site = k.site || 'Other';
-          let platform = site;
-          let platformKey = site.toLowerCase().replace(/\s+/g, '');
-
-          if (/codeforces/i.test(site)) return; // Already fetched directly
-          if (/leetcode/i.test(site)) return; // Already fetched directly
-          if (/atcoder/i.test(site)) { platform = 'AtCoder'; platformKey = 'atcoder'; }
-          if (/codechef/i.test(site)) { platform = 'CodeChef'; platformKey = 'codechef'; }
-          if (/hackerrank/i.test(site)) { platform = 'HackerRank'; platformKey = 'hackerrank'; }
-
-          const isOngoing = now >= startTimeMs && now < endTimeMs;
-
-          allContests.push({
-            id: `k-${platformKey}-${idx}`,
-            platform,
-            platformKey,
-            name: k.name,
-            url: k.url,
-            registerUrl: k.url,
-            startTime: new Date(startTimeMs).toISOString(),
-            startTimeMs,
-            endTimeMs,
-            durationSeconds,
-            durationFormatted: formatDuration(durationSeconds),
-            status: isOngoing ? 'ONGOING' : 'UPCOMING',
-            type: platform,
-            in24Hours: startTimeMs - now <= 24 * 3600 * 1000 && startTimeMs >= now
-          });
+      if (name && href && timeStr) {
+        const startTimeMs = new Date(timeStr).getTime();
+        let durationSeconds = 7200;
+        if (durationStr.includes(':')) {
+          const [h, m] = durationStr.split(':').map(Number);
+          durationSeconds = (h * 3600) + (m * 60);
         }
-      });
+        const endTimeMs = startTimeMs + durationSeconds * 1000;
+        const isOngoing = now >= startTimeMs && now < endTimeMs;
+
+        allContests.push({
+          id: `ac-${href.replace('/contests/', '')}`,
+          platform: 'AtCoder',
+          platformKey: 'atcoder',
+          name,
+          url: `https://atcoder.jp${href}`,
+          registerUrl: `https://atcoder.jp${href}`,
+          startTime: new Date(startTimeMs).toISOString(),
+          startTimeMs,
+          endTimeMs,
+          durationSeconds,
+          durationFormatted: formatDuration(durationSeconds),
+          status: isOngoing ? 'ONGOING' : 'UPCOMING',
+          type: 'AtCoder Rated Contest',
+          in24Hours: startTimeMs - now <= 24 * 3600 * 1000 && startTimeMs >= now
+        });
+      }
+    });
+  } catch (err) {
+    console.warn('Error fetching AtCoder contests:', err.message);
+  }
+
+  // 4. CodeChef Starters (Every Wednesday 20:00 IST / 14:30 UTC)
+  try {
+    for (let i = 0; i < 4; i++) {
+      const target = new Date();
+      target.setUTCDate(target.getUTCDate() + ((3 - target.getUTCDay() + 7) % 7) + (i * 7));
+      target.setUTCHours(14, 30, 0, 0); // 20:00 IST = 14:30 UTC
+      const startTimeMs = target.getTime();
+      const durationSeconds = 7200; // 2 hours
+      const endTimeMs = startTimeMs + durationSeconds * 1000;
+
+      if (endTimeMs > now) {
+        const isOngoing = now >= startTimeMs && now < endTimeMs;
+        allContests.push({
+          id: `cc-starters-w${i}`,
+          platform: 'CodeChef',
+          platformKey: 'codechef',
+          name: i === 0 ? 'CodeChef Starters (Upcoming Wednesday)' : `CodeChef Starters Round (+${i} wk)`,
+          url: 'https://www.codechef.com/contests',
+          registerUrl: 'https://www.codechef.com/contests',
+          startTime: new Date(startTimeMs).toISOString(),
+          startTimeMs,
+          endTimeMs,
+          durationSeconds,
+          durationFormatted: '2 hours',
+          status: isOngoing ? 'ONGOING' : 'UPCOMING',
+          type: 'Rated for All Divisions',
+          in24Hours: startTimeMs - now <= 24 * 3600 * 1000 && startTimeMs >= now
+        });
+      }
     }
   } catch (err) {
-    console.warn('Kontests API fetch error:', err.message);
+    console.warn('Error generating CodeChef contests:', err.message);
   }
 
   // Sort contests by start time ascending

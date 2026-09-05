@@ -131,8 +131,8 @@ export default function POTDHub({ potdList = [], potdCompletions = {}, onToggleP
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span className={`badge badge-${item.difficulty.toLowerCase()}`}>
-                      {item.difficulty}
+                    <span className={`badge badge-${(item.difficulty || 'Medium').toLowerCase()}`}>
+                      {item.difficulty || 'Medium'}
                     </span>
                     {item.rating && (
                       <span className="badge badge-rating">
@@ -208,6 +208,11 @@ export default function POTDHub({ potdList = [], potdCompletions = {}, onToggleP
             </div>
           );
         })}
+        {potdList.length === 0 && (
+          <div className="glass-card" style={{ padding: '2.5rem', textAlign: 'center', gridColumn: '1 / -1' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading today's challenges across platforms...</p>
+          </div>
+        )}
       </div>
 
       {/* 3. Daily Concept Booster Tip */}

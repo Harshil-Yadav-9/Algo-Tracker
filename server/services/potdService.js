@@ -40,10 +40,11 @@ export async function getPOTDData(userRating = 1200) {
             }
           }
         `
-      })
+      }),
+      signal: AbortSignal.timeout(5000)
     }).then(r => r.json());
 
-    const lcQ = lcRes.data?.activeDailyCodingChallengeQuestion;
+    const lcQ = lcRes?.data?.activeDailyCodingChallengeQuestion;
     if (lcQ && lcQ.question) {
       potdList.push({
         id: 'potd-leetcode',
@@ -63,49 +64,59 @@ export async function getPOTDData(userRating = 1200) {
     console.warn('Error fetching LeetCode POTD:', err.message);
   }
 
-  // 2. GeeksforGeeks POTD
+  // 2. GeeksforGeeks POTD (Official API)
   try {
-    const gfgHtml = await fetch('https://www.geeksforgeeks.org/problem-of-the-day', {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    }).then(r => r.text()).catch(() => '');
+    const gfgRes = await fetch('https://practiceapi.geeksforgeeks.org/api/v1/problems-of-day/problem/today/', {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(5000)
+    }).then(r => r.json());
 
-    let gfgTitle = 'GeeksforGeeks Daily Challenge';
-    let gfgUrl = 'https://www.geeksforgeeks.org/problem-of-the-day';
-    let gfgDiff = 'Medium';
-    let gfgTags = ['Data Structures', 'GFG POTD'];
-
-    if (gfgHtml) {
-      const $ = cheerio.load(gfgHtml);
-      const titleEl = $('h3, .problem-title, .potd-title, a[href*="/problems/"]').first();
-      if (titleEl.text().trim()) {
-        gfgTitle = titleEl.text().trim();
-      }
-      const href = $('a[href*="/problems/"]').first().attr('href');
-      if (href) {
-        gfgUrl = href.startsWith('http') ? href : `https://www.geeksforgeeks.org${href}`;
-      }
+    if (gfgRes && gfgRes.problem_name) {
+      potdList.push({
+        id: 'potd-gfg',
+        platform: 'GeeksforGeeks',
+        platformKey: 'gfg',
+        title: gfgRes.problem_name,
+        url: gfgRes.problem_url || 'https://www.geeksforgeeks.org/problem-of-the-day',
+        difficulty: gfgRes.difficulty || 'Medium',
+        rating: null,
+        concepts: gfgRes.tags?.topic_tags?.length ? gfgRes.tags.topic_tags : ['Data Structures', 'GFG POTD'],
+        date: gfgRes.date?.split(' ')[0] || new Date().toISOString().split('T')[0],
+        badgeColor: '#22c55e'
+      });
+    } else {
+      // Fallback
+      potdList.push({
+        id: 'potd-gfg',
+        platform: 'GeeksforGeeks',
+        platformKey: 'gfg',
+        title: 'GeeksforGeeks Daily Challenge',
+        url: 'https://www.geeksforgeeks.org/problem-of-the-day',
+        difficulty: 'Medium',
+        rating: null,
+        concepts: ['Data Structures', 'GFG POTD'],
+        date: new Date().toISOString().split('T')[0],
+        badgeColor: '#22c55e'
+      });
     }
-
+  } catch (err) {
+    console.warn('Error fetching GFG POTD via API, using fallback:', err.message);
     potdList.push({
       id: 'potd-gfg',
       platform: 'GeeksforGeeks',
       platformKey: 'gfg',
-      title: gfgTitle,
-      url: gfgUrl,
-      difficulty: gfgDiff,
+      title: 'GeeksforGeeks Daily Challenge',
+      url: 'https://www.geeksforgeeks.org/problem-of-the-day',
+      difficulty: 'Medium',
       rating: null,
-      concepts: gfgTags,
+      concepts: ['Data Structures', 'GFG POTD'],
       date: new Date().toISOString().split('T')[0],
       badgeColor: '#22c55e'
     });
-  } catch (err) {
-    console.warn('Error fetching GFG POTD:', err.message);
   }
 
-  // 3. Codeforces Daily Challenge (Curated smart recommendation based on CP rating)
+  // 3. Codeforces Daily Challenge (Curated CP problem pool by day of year)
   const targetRating = Math.max(800, Math.min(2400, Math.round((userRating + 100) / 100) * 100));
-  
-  // Rotating problem pool by day of year
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
   
   const cfChallengePool = [
@@ -142,7 +153,7 @@ export async function getPOTDData(userRating = 1200) {
     badgeColor: '#3b82f6'
   });
 
-  // 4. AtCoder Daily ABC Challenge
+  // 4. AtCoder Daily ABC Practice
   potdList.push({
     id: 'potd-atcoder',
     platform: 'AtCoder',
@@ -153,7 +164,21 @@ export async function getPOTDData(userRating = 1200) {
     rating: 800,
     concepts: ['Implementation', 'Algorithms', 'AtCoder ABC'],
     date: new Date().toISOString().split('T')[0],
-    badgeColor: '#8b5cf6'
+    badgeColor: '#00D2FF'
+  });
+
+  // 5. CodeChef Daily Challenge
+  potdList.push({
+    id: 'potd-codechef',
+    platform: 'CodeChef',
+    platformKey: 'codechef',
+    title: 'CodeChef Daily Practice Challenge',
+    url: 'https://www.codechef.com/practice',
+    difficulty: 'Medium',
+    rating: 1200,
+    concepts: ['Implementation', 'Data Structures', 'Greedy'],
+    date: new Date().toISOString().split('T')[0],
+    badgeColor: '#f59e0b'
   });
 
   potdCache = potdList;

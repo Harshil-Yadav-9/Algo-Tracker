@@ -196,8 +196,9 @@ export default function App() {
   const fetchPOTD = async () => {
     try {
       const res = await fetch(apiUrl('/api/potd')).then(r => r.json());
-      if (res.success && Array.isArray(res.potd)) {
-        setPotdList(res.potd);
+      const list = res.potdList || res.potd || [];
+      if (res.success && Array.isArray(list)) {
+        setPotdList(list);
       }
     } catch (err) {
       console.warn('Failed to fetch POTD:', err);

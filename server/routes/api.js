@@ -207,10 +207,10 @@ router.get('/potd', async (req, res) => {
   try {
     const rating = parseInt(req.query.rating, 10) || 1200;
     const potdList = await getPOTDData(rating);
-    res.json({ success: true, date: new Date().toISOString().split('T')[0], potdList });
+    res.json({ success: true, date: new Date().toISOString().split('T')[0], potd: potdList, potdList });
   } catch (err) {
     console.error('Error fetching POTD:', err);
-    res.status(500).json({ success: false, error: err.message, potdList: [] });
+    res.status(500).json({ success: false, error: err.message, potd: [], potdList: [] });
   }
 });
 
