@@ -31,7 +31,7 @@ app.get('/api/info', (req, res) => {
   res.json({
     name: 'AlgoTracker API',
     status: 'online',
-    version: '2.1.0'
+    version: '2.2.0'
   });
 });
 

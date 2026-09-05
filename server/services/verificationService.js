@@ -242,7 +242,9 @@ export async function verifyPlatformBioLive(userId, platform, handle) {
 
     // 5. GeeksforGeeks live verification
     else if (cleanPlatform === 'gfg') {
-      const html = await fetch(`https://www.geeksforgeeks.org/user/${encodeURIComponent(cleanHandle)}/`, {
+      let gfgUser = cleanHandle.replace(/^https?:\/\/(?:www\.|auth\.)?geeksforgeeks\.org\/(?:user|profile)\//i, '');
+      gfgUser = gfgUser.replace(/^\/+|\/+$/g, '').replace(/^@/, '').trim();
+      const html = await fetch(`https://www.geeksforgeeks.org/user/${encodeURIComponent(gfgUser)}/`, {
         headers: { 'User-Agent': 'Mozilla/5.0' }
       }).then(r => r.text());
 

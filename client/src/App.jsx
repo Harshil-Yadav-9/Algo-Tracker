@@ -47,15 +47,73 @@ export default function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(Boolean(token));
   const isAdmin = currentUser?.role === 'admin';
 
-  // Handles
-  const [handles, setHandles] = useState({
-    codeforces: '',
-    leetcode: '',
-    atcoder: '',
-    codechef: '',
-    gfg: '',
-    hackerrank: ''
+  // Handles: initialized with last used handles from JWT or localStorage
+  const [handles, setHandles] = useState(() => {
+    // 1. Try decoding lastHandles directly from JWT token
+    const initialToken = (() => {
+      try {
+        return localStorage.getItem('algopulse_token') || sessionStorage.getItem('algopulse_token') || '';
+      } catch {
+        return '';
+      }
+    })();
+
+    if (initialToken) {
+      try {
+        const parts = initialToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          if (payload?.lastHandles && typeof payload.lastHandles === 'object') {
+            return {
+              codeforces: payload.lastHandles.codeforces || '',
+              leetcode: payload.lastHandles.leetcode || '',
+              atcoder: payload.lastHandles.atcoder || '',
+              codechef: payload.lastHandles.codechef || '',
+              gfg: payload.lastHandles.gfg || '',
+              hackerrank: payload.lastHandles.hackerrank || ''
+            };
+          }
+        }
+      } catch {}
+    }
+
+    // 2. Try localStorage saved handles
+    try {
+      const saved = localStorage.getItem('algopulse_last_handles');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          return {
+            codeforces: parsed.codeforces || '',
+            leetcode: parsed.leetcode || '',
+            atcoder: parsed.atcoder || '',
+            codechef: parsed.codechef || '',
+            gfg: parsed.gfg || '',
+            hackerrank: parsed.hackerrank || ''
+          };
+        }
+      }
+    } catch {}
+
+    return {
+      codeforces: '',
+      leetcode: '',
+      atcoder: '',
+      codechef: '',
+      gfg: '',
+      hackerrank: ''
+    };
   });
+
+  // Persist last used handles to localStorage whenever updated
+  useEffect(() => {
+    try {
+      const hasAny = Object.values(handles || {}).some(h => Boolean(h && h.trim()));
+      if (hasAny) {
+        localStorage.setItem('algopulse_last_handles', JSON.stringify(handles));
+      }
+    } catch {}
+  }, [handles]);
 
   // User notes & bookmarks
   const [notes, setNotes] = useState({});
@@ -116,9 +174,12 @@ export default function App() {
 
       if (res.success && res.user) {
         setCurrentUser(res.user);
-        
-        if (res.user.handles) {
-          setHandles(res.user.handles);
+        const restoredHandles = res.lastHandles || res.user.handles || res.user.lastHandles;
+        if (restoredHandles && typeof restoredHandles === 'object') {
+          setHandles(prev => ({ ...prev, ...restoredHandles }));
+          try {
+            localStorage.setItem('algopulse_last_handles', JSON.stringify(restoredHandles));
+          } catch {}
         }
         if (res.user.bookmarks) setBookmarks(res.user.bookmarks);
         if (res.user.notes) setNotes(res.user.notes);
@@ -244,6 +305,18 @@ export default function App() {
           }
         }
 
+        if (response.token) {
+          setToken(response.token);
+          try {
+            localStorage.setItem('algopulse_token', response.token);
+          } catch {}
+        }
+        if (response.lastHandles) {
+          try {
+            localStorage.setItem('algopulse_last_handles', JSON.stringify(response.lastHandles));
+          } catch {}
+        }
+
         setSyncData(response);
         setLastSyncedTime(new Date());
       } else {
@@ -274,6 +347,9 @@ export default function App() {
   // Handle Save (Updating bound handles)
   const handleSaveHandles = async (newHandles) => {
     setHandles(newHandles);
+    try {
+      localStorage.setItem('algopulse_last_handles', JSON.stringify(newHandles));
+    } catch {}
 
     if (currentUser && token) {
       try {
@@ -287,7 +363,13 @@ export default function App() {
         }).then(r => r.json());
 
         if (res.success) {
-          setCurrentUser(res.user);
+          if (res.user) setCurrentUser(res.user);
+          if (res.token) {
+            setToken(res.token);
+            try {
+              localStorage.setItem('algopulse_token', res.token);
+            } catch {}
+          }
         } else {
           alert(res.error || 'Could not update handles.');
         }
@@ -331,7 +413,26 @@ export default function App() {
   const handleAuthSuccess = (user, authToken, savedProblems) => {
     setCurrentUser(user);
     setToken(authToken);
-    if (user.handles) setHandles(user.handles);
+
+    // Restore last used handles from user object or directly from JWT token payload
+    let restoredHandles = user?.lastHandles || user?.handles;
+    if (!restoredHandles && authToken) {
+      try {
+        const parts = authToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          if (payload?.lastHandles) restoredHandles = payload.lastHandles;
+        }
+      } catch {}
+    }
+
+    if (restoredHandles && typeof restoredHandles === 'object') {
+      setHandles(prev => ({ ...prev, ...restoredHandles }));
+      try {
+        localStorage.setItem('algopulse_last_handles', JSON.stringify(restoredHandles));
+      } catch {}
+    }
+
     if (user.bookmarks) setBookmarks(user.bookmarks);
     if (user.notes) setNotes(user.notes);
     if (user.potdCompletions) setPotdCompletions(user.potdCompletions);
@@ -346,7 +447,7 @@ export default function App() {
     }
 
     setActiveTab('dashboard');
-    handleSync(user.handles || handles, authToken);
+    handleSync(restoredHandles || user.handles || handles, authToken);
   };
 
   const handleLogout = () => {

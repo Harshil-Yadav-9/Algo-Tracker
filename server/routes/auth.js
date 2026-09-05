@@ -109,9 +109,14 @@ router.post('/google', async (req, res) => {
       });
     }
 
-    // Generate JWT session token
+    // Generate JWT session token with user's last used handles embedded
     const token = jwt.sign(
-      { id: user._id || user.id, email: user.email, role: user.role },
+      { 
+        id: user._id || user.id, 
+        email: user.email, 
+        role: user.role,
+        lastHandles: user.handles || {}
+      },
       JWT_SECRET,
       { expiresIn: '30d' }
     );
@@ -125,7 +130,11 @@ router.post('/google', async (req, res) => {
       success: true,
       message: `Welcome, ${user.name || user.email}!`,
       token,
-      user: sanitizeUser(user),
+      user: {
+        ...sanitizeUser(user),
+        lastHandles: user.handles || {}
+      },
+      lastHandles: user.handles || {},
       isNewUser,
       savedProblems,
       savedProblemsCount: savedProblems.length
@@ -140,9 +149,14 @@ router.post('/google', async (req, res) => {
 router.get('/me', authenticateUser, async (req, res) => {
   try {
     const savedProblems = await ProblemStore.getUserProblems(req.user._id || req.user.id);
+    const lastHandles = req.user.handles || {};
     res.json({
       success: true,
-      user: sanitizeUser(req.user),
+      user: {
+        ...sanitizeUser(req.user),
+        lastHandles
+      },
+      lastHandles,
       savedProblems,
       savedProblemsCount: savedProblems.length
     });
@@ -240,11 +254,25 @@ router.post('/verify-confirm', authenticateUser, async (req, res) => {
       verifiedHandles: userVerified
     });
 
+    // Refresh JWT token with updated lastHandles
+    const refreshedToken = jwt.sign(
+      {
+        id: currentUserId,
+        email: req.user.email,
+        role: req.user.role,
+        lastHandles: updatedUser.handles || {}
+      },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
     console.log(`✅ [HANDLE_VERIFIED] ${req.user.email} -> ${cleanPlatform}: ${cleanHandle}`);
 
     res.json({
       success: true,
       message: result.message,
+      token: refreshedToken,
+      lastHandles: updatedUser.handles,
       platform: cleanPlatform,
       handle: cleanHandle,
       handles: updatedUser.handles,
@@ -277,9 +305,22 @@ router.post('/unlink-handle', authenticateUser, async (req, res) => {
       verifiedHandles: userVerified
     });
 
+    const refreshedToken = jwt.sign(
+      {
+        id: currentUserId,
+        email: req.user.email,
+        role: req.user.role,
+        lastHandles: updatedUser.handles || {}
+      },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
     res.json({
       success: true,
       message: `Unlinked ${cleanPlatform.toUpperCase()} handle.`,
+      token: refreshedToken,
+      lastHandles: updatedUser.handles,
       handles: updatedUser.handles,
       verifiedHandles: updatedUser.verifiedHandles
     });

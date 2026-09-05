@@ -8,7 +8,8 @@ import { getGFGData } from '../services/gfgService.js';
 import { getHackerRankData } from '../services/hackerrankService.js';
 import { getUpcomingContests } from '../services/contestService.js';
 import { getPOTDData } from '../services/potdService.js';
-import { authenticateUser, optionalAuth } from '../middleware/auth.js';
+import { authenticateUser, optionalAuth, JWT_SECRET } from '../middleware/auth.js';
+import jwt from 'jsonwebtoken';
 import { UserStore, ProblemStore } from '../config/db.js';
 
 const router = Router();
@@ -19,38 +20,43 @@ router.get('/health', (req, res) => {
 });
 
 // 2. Multi-Platform Live Sync (Clean per-user isolation in MongoDB & Universal Admin Explorer)
-router.post('/sync', authenticateUser, async (req, res) => {
+router.post('/sync', optionalAuth, async (req, res) => {
   try {
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user?.role === 'admin';
     const isExplorerMode = Boolean(isAdmin && req.body.isExplorer);
 
     let handlesToSync = {};
 
-    if (isAdmin) {
-      // Superuser admin can sync any custom handle passed in request or their own
-      handlesToSync = req.body.handles || req.user.handles || {};
-    } else {
-      // Regular user: strictly enforce their own bound handles in MongoDB
-      if (req.body.handles && typeof req.body.handles === 'object') {
-        const cleanIncoming = {
-          codeforces: (req.body.handles.codeforces || '').trim(),
-          leetcode: (req.body.handles.leetcode || '').trim(),
-          atcoder: (req.body.handles.atcoder || '').trim(),
-          codechef: (req.body.handles.codechef || '').trim(),
-          gfg: (req.body.handles.gfg || '').trim(),
-          hackerrank: (req.body.handles.hackerrank || '').trim()
-        };
-        // Update user's bound handles in DB
-        await UserStore.updateById(req.user._id || req.user.id, { handles: cleanIncoming });
-        handlesToSync = cleanIncoming;
+    if (req.user) {
+      if (isAdmin) {
+        // Superuser admin can sync any custom handle passed in request or their own
+        handlesToSync = req.body.handles || req.user.handles || {};
       } else {
-        handlesToSync = req.user.handles || {};
+        // Regular user: strictly enforce their own bound handles in MongoDB
+        if (req.body.handles && typeof req.body.handles === 'object') {
+          const cleanIncoming = {
+            codeforces: (req.body.handles.codeforces || '').trim(),
+            leetcode: (req.body.handles.leetcode || '').trim(),
+            atcoder: (req.body.handles.atcoder || '').trim(),
+            codechef: (req.body.handles.codechef || '').trim(),
+            gfg: (req.body.handles.gfg || '').trim(),
+            hackerrank: (req.body.handles.hackerrank || '').trim()
+          };
+          // Update user's bound handles in DB
+          await UserStore.updateById(req.user._id || req.user.id, { handles: cleanIncoming });
+          handlesToSync = cleanIncoming;
+        } else {
+          handlesToSync = req.user.handles || {};
+        }
       }
+    } else {
+      // Guest mode (unauthenticated): sync whatever handles were sent
+      handlesToSync = req.body.handles || {};
     }
 
     const { codeforces, leetcode, atcoder, codechef, gfg, hackerrank } = handlesToSync;
 
-    console.log(`Syncing for ${req.user.email} (Admin: ${isAdmin}, Explorer: ${isExplorerMode}):`, {
+    console.log(`Syncing for ${req.user?.email || 'Guest'} (Admin: ${isAdmin}, Explorer: ${isExplorerMode}):`, {
       codeforces, leetcode, atcoder, codechef, gfg, hackerrank
     });
 
@@ -131,9 +137,9 @@ router.post('/sync', authenticateUser, async (req, res) => {
 
     // Real-time diff calculation
     const newlySolved = [];
-    const userId = req.user._id || req.user.id;
 
-    if (!isExplorerMode) {
+    if (req.user && !isExplorerMode) {
+      const userId = req.user._id || req.user.id;
       const prevProblems = await ProblemStore.getUserProblems(userId);
       const prevSolvedSet = new Set(
         prevProblems.filter(p => p.verdict === 'Solved').map(p => `${p.platformKey}-${p.problemId}`)
@@ -166,10 +172,35 @@ router.post('/sync', authenticateUser, async (req, res) => {
       });
     }
 
+    let refreshedToken = null;
+    let userInfo = null;
+
+    if (req.user) {
+      const currentUserId = req.user._id || req.user.id;
+      refreshedToken = jwt.sign(
+        {
+          id: currentUserId,
+          email: req.user.email,
+          role: req.user.role,
+          lastHandles: handlesToSync
+        },
+        JWT_SECRET,
+        { expiresIn: '30d' }
+      );
+      userInfo = {
+        email: req.user.email,
+        username: req.user.username,
+        role: req.user.role,
+        lastHandles: handlesToSync
+      };
+    }
+
     res.json({
       success: true,
       timestamp: new Date().toISOString(),
-      user: { email: req.user.email, username: req.user.username, role: req.user.role },
+      token: refreshedToken,
+      lastHandles: handlesToSync,
+      user: userInfo,
       summary: {
         totalSolved,
         totalAttempted,
