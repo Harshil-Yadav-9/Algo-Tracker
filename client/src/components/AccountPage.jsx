@@ -5,15 +5,8 @@ import {
   LogOut, 
   CheckCircle2, 
   AlertCircle, 
-  ExternalLink, 
   Key,
-  Layers,
-  ArrowRight,
-  Sparkles,
-  Trophy,
-  Calendar,
-  Flame,
-  Check
+  Trophy
 } from 'lucide-react';
 import { apiUrl } from '../services/api';
 import PlatformIcon, { GoogleIcon } from './PlatformIcons';
@@ -30,7 +23,6 @@ export default function AccountPage({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [devEmail, setDevEmail] = useState('');
 
   const googleBtnRef = useRef(null);
 
@@ -127,50 +119,7 @@ export default function AccountPage({
     }
   };
 
-  // Direct login for development/testing when GOOGLE_CLIENT_ID is not configured
-  const handleDirectLogin = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    if (!devEmail || !devEmail.trim()) {
-      setErrorMsg('Please enter a valid email address.');
-      return;
-    }
 
-    setIsLoading(true);
-    setErrorMsg('');
-
-    const email = devEmail.trim().toLowerCase();
-    const name = email.split('@')[0];
-
-    try {
-      const res = await fetch(apiUrl('/api/auth/google'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profile: {
-            email,
-            name,
-            sub: `google_${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
-            picture: 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-          }
-        })
-      }).then(r => r.json());
-
-      if (res.success) {
-        setSuccessMsg(`Authenticated as ${res.user.name || res.user.email}`);
-        sessionStorage.setItem('algopulse_token', res.token);
-        localStorage.setItem('algopulse_token', res.token);
-        setTimeout(() => {
-          onAuthSuccess(res.user, res.token, res.savedProblems);
-        }, 300);
-      } else {
-        setErrorMsg(res.error || 'Authentication failed.');
-      }
-    } catch (err) {
-      setErrorMsg('Network error connecting to backend.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // If user is LOGGED IN, show their profile overview
   if (currentUser) {
@@ -358,51 +307,9 @@ export default function AccountPage({
           </div>
         )}
 
-        {/* Google OAuth Button Container */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', width: '100%' }}>
-          {googleClientId ? (
-            <div style={{ display: 'flex', justifyContent: 'center', width: '100%', minHeight: '44px' }}>
-              <div ref={googleBtnRef}></div>
-            </div>
-          ) : (
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <div style={{
-                padding: '0.75rem 1rem',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(56, 189, 248, 0.08)',
-                border: '1px solid rgba(56, 189, 248, 0.25)',
-                fontSize: '0.78rem',
-                color: 'var(--text-muted)',
-                lineHeight: 1.5
-              }}>
-                <strong style={{ color: '#38bdf8' }}>Google OAuth Setup:</strong> Add your <code style={{ color: '#38bdf8' }}>GOOGLE_CLIENT_ID</code> to <code style={{ color: '#38bdf8' }}>server/.env</code> to enable genuine Google Single Sign-On.
-              </div>
-
-              {/* Dev Sign-In Form */}
-              <form onSubmit={handleDirectLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase' }}>
-                  Local Dev Sign-In
-                </div>
-                <input 
-                  type="email" 
-                  value={devEmail} 
-                  onChange={(e) => setDevEmail(e.target.value)} 
-                  placeholder="Enter your email (e.g. yourname@gmail.com)"
-                  className="input-field"
-                  style={{ width: '100%', fontSize: '0.85rem', padding: '0.55rem 0.8rem' }}
-                />
-                <button 
-                  type="submit"
-                  disabled={isLoading}
-                  className="btn btn-primary"
-                  style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}
-                >
-                  <User size={15} />
-                  <span>{isLoading ? 'Signing In...' : 'Sign In (Dev Mode)'}</span>
-                </button>
-              </form>
-            </div>
-          )}
+        {/* Google OAuth Button — rendered by official Google Identity Services SDK */}
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '1.5rem', minHeight: '44px' }}>
+          <div ref={googleBtnRef}></div>
         </div>
 
         {/* Platform Supported Icons */}
