@@ -5,30 +5,29 @@ import {
   AlertCircle, 
   CheckCircle2, 
   Copy, 
-  Terminal,
-  ExternalLink,
-  Clock,
-  Trash2,
-  RefreshCw,
-  Check,
-  Zap,
-  Lock
+  ExternalLink, 
+  Clock, 
+  Trash2, 
+  RefreshCw, 
+  Check, 
+  Key,
+  UserCheck
 } from 'lucide-react';
 import { apiUrl } from '../services/api';
+import PlatformIcon from './PlatformIcons';
 
 const PLATFORMS_CONFIG = [
-  { key: 'codeforces', name: 'Codeforces', tag: 'CF', placeholder: 'e.g. tourist' },
-  { key: 'leetcode', name: 'LeetCode', tag: 'LC', placeholder: 'e.g. neal_wu' },
-  { key: 'codechef', name: 'CodeChef', tag: 'CC', placeholder: 'e.g. chef_handle' },
-  { key: 'atcoder', name: 'AtCoder', tag: 'AC', placeholder: 'e.g. tourist' },
-  { key: 'gfg', name: 'GeeksforGeeks', tag: 'GFG', placeholder: 'e.g. gfg_user' },
-  { key: 'hackerrank', name: 'HackerRank', tag: 'HR', placeholder: 'e.g. hr_user' }
+  { key: 'codeforces', name: 'Codeforces', placeholder: 'e.g. tourist' },
+  { key: 'leetcode', name: 'LeetCode', placeholder: 'e.g. neal_wu' },
+  { key: 'codechef', name: 'CodeChef', placeholder: 'e.g. chef_handle' },
+  { key: 'atcoder', name: 'AtCoder', placeholder: 'e.g. tourist' },
+  { key: 'gfg', name: 'GeeksforGeeks', placeholder: 'e.g. gfg_user' },
+  { key: 'hackerrank', name: 'HackerRank', placeholder: 'e.g. hr_user' }
 ];
 
 export default function HandleModal({ isOpen, onClose, currentHandles, onSaveHandles, currentUser }) {
   if (!isOpen) return null;
 
-  const isAdmin = currentUser?.role === 'admin';
   const token = localStorage.getItem('algopulse_token') || sessionStorage.getItem('algopulse_token') || '';
 
   const [handles, setHandles] = useState({
@@ -82,7 +81,7 @@ export default function HandleModal({ isOpen, onClose, currentHandles, onSaveHan
         setSecondsRemaining(remaining);
         if (remaining <= 0) {
           clearInterval(timerRef.current);
-          setErrorMsg('[EXPIRED] 60-second verification session expired. Please generate a new code.');
+          setErrorMsg('60-second verification session expired. Please generate a new code.');
         }
       };
 
@@ -99,7 +98,7 @@ export default function HandleModal({ isOpen, onClose, currentHandles, onSaveHan
   const handleStartVerification = async (platform, handleToVerify) => {
     const handle = (handleToVerify || inputHandle || handles[platform] || '').trim();
     if (!handle) {
-      setErrorMsg(`[ERROR] Please enter your ${platform.toUpperCase()} handle first.`);
+      setErrorMsg(`Please enter your ${platform.toUpperCase()} handle first.`);
       return;
     }
 
@@ -129,10 +128,10 @@ export default function HandleModal({ isOpen, onClose, currentHandles, onSaveHan
         setSelectedPlatform(res.platform);
         setSecondsRemaining(60);
       } else {
-        setErrorMsg(res.error || '[ERROR] Failed to start verification session.');
+        setErrorMsg(res.error || 'Failed to start verification session.');
       }
     } catch (err) {
-      setErrorMsg('[ERROR] Could not connect to verification server.');
+      setErrorMsg('Could not connect to verification server.');
     } finally {
       setIsGenerating(false);
     }
@@ -155,21 +154,29 @@ export default function HandleModal({ isOpen, onClose, currentHandles, onSaveHan
         },
         body: JSON.stringify({
           platform: activeSession.platform,
-          handle: activeSession.handle
+          handle: activeSession.handle,
+          token: activeSession.token
         })
       }).then(r => r.json());
 
       if (res.success) {
-        setSuccessMsg(res.message || `[SUCCESS] Verified & linked @${activeSession.handle} on ${activeSession.platform.toUpperCase()}!`);
-        setHandles(res.handles);
-        setVerifiedHandles(res.verifiedHandles);
+        setSuccessMsg(`Successfully verified @${activeSession.handle} on ${activeSession.platform.toUpperCase()}!`);
+        
+        const updatedHandles = { ...handles, [activeSession.platform]: activeSession.handle };
+        const updatedVerified = { ...verifiedHandles, [activeSession.platform]: true };
+        
+        setHandles(updatedHandles);
+        setVerifiedHandles(updatedVerified);
         setActiveSession(null);
-        if (onSaveHandles) onSaveHandles(res.handles);
+
+        if (onSaveHandles) {
+          onSaveHandles(updatedHandles);
+        }
       } else {
-        setErrorMsg(res.error || '[VERIFICATION_FAILED] Code not found in bio.');
+        setErrorMsg(res.error || 'Verification code not found in bio. Please make sure you saved it and retry.');
       }
     } catch (err) {
-      setErrorMsg('[ERROR] Network error during live verification check.');
+      setErrorMsg('Network error during verification.');
     } finally {
       setIsVerifying(false);
     }
@@ -177,7 +184,7 @@ export default function HandleModal({ isOpen, onClose, currentHandles, onSaveHan
 
   // Unlink handle
   const handleUnlink = async (platform) => {
-    if (!window.confirm(`[CONFIRM_UNLINK] Remove verified ${platform.toUpperCase()} handle "${handles[platform]}"?`)) return;
+    if (!window.confirm(`Are you sure you want to unlink your ${platform.toUpperCase()} handle?`)) return;
 
     setIsUnlinking(true);
     setErrorMsg('');
@@ -194,322 +201,217 @@ export default function HandleModal({ isOpen, onClose, currentHandles, onSaveHan
       }).then(r => r.json());
 
       if (res.success) {
-        setHandles(res.handles);
-        setVerifiedHandles(res.verifiedHandles);
-        setSuccessMsg(`[UNLINKED] Removed ${platform.toUpperCase()} handle.`);
-        if (onSaveHandles) onSaveHandles(res.handles);
+        setSuccessMsg(`Unlinked ${platform.toUpperCase()} handle.`);
+        const updatedHandles = { ...handles, [platform]: '' };
+        const updatedVerified = { ...verifiedHandles, [platform]: false };
+        setHandles(updatedHandles);
+        setVerifiedHandles(updatedVerified);
+        if (onSaveHandles) onSaveHandles(updatedHandles);
       } else {
         setErrorMsg(res.error || 'Failed to unlink handle.');
       }
     } catch (err) {
-      setErrorMsg('[ERROR] Network error unlinking handle.');
+      setErrorMsg('Error connecting to backend.');
     } finally {
       setIsUnlinking(false);
     }
   };
 
-  const handleCopyCode = (code) => {
-    navigator.clipboard.writeText(code);
+  // Quick save handles
+  const handleSubmitAll = (e) => {
+    e.preventDefault();
+    if (onSaveHandles) {
+      onSaveHandles(handles);
+    }
+    onClose();
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
     setCopiedToken(true);
     setTimeout(() => setCopiedToken(false), 2000);
   };
 
   return (
-    <div className="modal-backdrop">
+    <div className="modal-backdrop" onClick={onClose}>
       <div 
-        className="glass-card modal-content" 
-        style={{ padding: '1.25rem 1.5rem', maxWidth: '580px', width: '95%' }}
+        className="modal-content" 
+        style={{ 
+          maxWidth: '560px', 
+          padding: '1.75rem',
+          position: 'relative'
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
-        
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{
-              background: 'var(--accent-green-dark)',
-              border: '1px solid var(--accent-green)',
-              padding: '0.35rem',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--accent-green)'
-            }}>
-              <Terminal size={18} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '0.04em' }}>
-                $ /usr/bin/verify-handle --bio-check --60s
-              </h3>
-              <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                Guaranteed ownership verification: temporary 60-second profile bio token check
-              </p>
-            </div>
-          </div>
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            right: '1rem',
+            top: '1rem',
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--text-dim)',
+            cursor: 'pointer'
+          }}
+        >
+          <X size={18} />
+        </button>
 
-          <button 
-            onClick={onClose}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
-          >
-            <X size={16} />
-          </button>
+        {/* Modal Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.25rem' }}>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: 'var(--radius-sm)',
+            background: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid var(--accent-green)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--accent-green)'
+          }}>
+            <Shield size={18} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>
+              Connected Platform Handles
+            </h2>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              Enter your competitive programming handles to sync solves and stats.
+            </p>
+          </div>
         </div>
 
-        {/* Feedback Messages */}
+        {/* Feedback alerts */}
         {errorMsg && (
-          <div style={{
-            padding: '0.5rem 0.75rem',
-            background: 'var(--bg-dark)',
-            border: '1px solid var(--verdict-wrong)',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--verdict-wrong)',
-            fontSize: '0.72rem',
-            marginBottom: '0.75rem',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '0.4rem',
-            lineHeight: 1.4
-          }}>
-            <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+          <div style={{ marginBottom: '1rem', padding: '0.6rem 0.85rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: 'var(--radius-sm)', color: '#f87171', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <AlertCircle size={15} />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div style={{
-            padding: '0.5rem 0.75rem',
-            background: 'var(--bg-dark)',
-            border: '1px solid var(--accent-green-bright)',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--accent-green-bright)',
-            fontSize: '0.72rem',
-            marginBottom: '0.75rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem'
-          }}>
-            <CheckCircle2 size={14} style={{ flexShrink: 0 }} />
+          <div style={{ marginBottom: '1rem', padding: '0.6rem 0.85rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: 'var(--radius-sm)', color: '#34d399', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <CheckCircle2 size={15} />
             <span>{successMsg}</span>
           </div>
         )}
 
-        {/* 1. ACTIVE 60-SECOND VERIFICATION SCREEN */}
-        {activeSession ? (
+        {/* Verification Active Session Box */}
+        {activeSession && (
           <div style={{
-            background: 'var(--bg-dark)',
+            padding: '1rem',
+            background: 'var(--bg-main)',
             border: '1px solid var(--accent-green)',
             borderRadius: 'var(--radius-sm)',
-            padding: '0.85rem 1rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.65rem'
+            marginBottom: '1.25rem'
           }}>
-            {/* Header & Timer Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span className="badge tag-terminal" style={{ fontSize: '0.7rem' }}>
-                  {activeSession.platform.toUpperCase()}
-                </span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                  @{activeSession.handle}
-                </span>
-              </div>
-
-              {/* Countdown Ticker */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                padding: '0.2rem 0.5rem',
-                borderRadius: 'var(--radius-sm)',
-                background: secondsRemaining > 15 ? 'var(--accent-green-dark)' : 'rgba(239, 68, 68, 0.2)',
-                border: secondsRemaining > 15 ? '1px solid var(--accent-green)' : '1px solid var(--verdict-wrong)',
-                color: secondsRemaining > 15 ? 'var(--accent-green-bright)' : 'var(--verdict-wrong)',
-                fontWeight: 800,
-                fontSize: '0.75rem',
-                fontFamily: 'var(--font-mono)'
-              }}>
-                <Clock size={12} className={secondsRemaining > 0 ? 'spin-animation' : ''} />
-                <span>{secondsRemaining}s REMAINING</span>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                Verify {activeSession.platform.toUpperCase()}: @{activeSession.handle}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#fbbf24', fontWeight: 700 }}>
+                {secondsRemaining}s left
+              </span>
             </div>
 
-            {/* Token Copy Box */}
-            <div>
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)', display: 'block', marginBottom: '0.2rem' }}>
-                1. COPY THIS UNIQUE VERIFICATION CODE:
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--accent-green-bright)',
-                padding: '0.4rem 0.65rem',
+                flexGrow: 1,
+                padding: '0.45rem 0.75rem',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-sm)',
                 fontFamily: 'var(--font-mono)',
-                fontSize: '0.82rem',
-                color: 'var(--accent-green-bright)',
-                fontWeight: 700
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: 'var(--accent-green-bright)'
               }}>
-                <span>{activeSession.token}</span>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  onClick={() => handleCopyCode(activeSession.token)}
-                  style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}
-                >
-                  <Copy size={11} />
-                  <span>{copiedToken ? 'COPIED!' : 'COPY CODE'}</span>
-                </button>
+                {activeSession.token}
               </div>
-            </div>
-
-            {/* Step-by-Step Instructions */}
-            <div style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-color)',
-              padding: '0.65rem 0.75rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.72rem',
-              lineHeight: 1.45,
-              color: 'var(--text-muted)'
-            }}>
-              <div style={{ fontWeight: 700, color: 'var(--accent-green)', marginBottom: '0.3rem' }}>
-                2. INSTRUCTIONS FOR {activeSession.platform.toUpperCase()}:
-              </div>
-              {activeSession.instructions?.steps?.map((step, idx) => (
-                <div key={idx} style={{ marginBottom: '0.2rem' }}>
-                  {step}
-                </div>
-              ))}
-            </div>
-
-            {/* Direct Link to Profile Settings */}
-            {activeSession.instructions?.settingsUrl && (
-              <a
-                href={activeSession.instructions.settingsUrl}
-                target="_blank"
-                rel="noreferrer"
+              <button 
+                onClick={() => copyToClipboard(activeSession.token)}
                 className="btn btn-secondary btn-sm"
-                style={{ justifyContent: 'center', fontSize: '0.75rem', textDecoration: 'none' }}
               >
-                <span>OPEN {activeSession.platform.toUpperCase()} PROFILE SETTINGS</span>
-                <ExternalLink size={12} />
-              </a>
-            )}
-
-            {/* Verify Now & Cancel Actions */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => setActiveSession(null)}
-                style={{ fontSize: '0.72rem' }}
-              >
-                CANCEL
+                {copiedToken ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
+                <span>{copiedToken ? 'Copied' : 'Copy'}</span>
               </button>
+            </div>
 
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.65rem' }}>
+              Paste code in your bio/status and save, then confirm:
+            </p>
+
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button 
                 onClick={handleConfirmLiveVerification}
-                disabled={isVerifying || secondsRemaining <= 0}
-                style={{ flexGrow: 1, justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem' }}
+                disabled={isVerifying}
+                className="btn btn-primary btn-sm"
+                style={{ flexGrow: 1 }}
               >
-                <Zap size={13} />
-                <span>{isVerifying ? 'SCANNING PROFILE BIO LIVE...' : 'VERIFY & LOCK HANDLE IN DATABASE'}</span>
+                <RefreshCw size={12} className={isVerifying ? 'spin-animation' : ''} />
+                <span>{isVerifying ? 'Verifying...' : 'Confirm Verification'}</span>
               </button>
-            </div>
-          </div>
-        ) : (
-          /* 2. PLATFORMS LIST & VERIFICATION GENERATOR */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-              Select a platform to link your handle. Each handle must be verified via your profile bio before being saved to MongoDB:
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {PLATFORMS_CONFIG.map(p => {
-                const currentVal = handles[p.key] || '';
-                const isVerified = Boolean(verifiedHandles[p.key] && currentVal);
-
-                return (
-                  <div 
-                    key={p.key}
-                    style={{
-                      background: 'var(--bg-dark)',
-                      border: isVerified ? '1px solid var(--accent-green-bright)' : '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '0.55rem 0.75rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '0.5rem'
-                    }}
-                  >
-                    {/* Platform name & current handle */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '160px' }}>
-                      <span className="badge tag-terminal" style={{ fontSize: '0.68rem' }}>
-                        {p.tag}
-                      </span>
-                      <div>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                          {p.name}
-                        </div>
-                        <div style={{ fontSize: '0.68rem', color: isVerified ? 'var(--accent-green-bright)' : 'var(--text-dim)' }}>
-                          {isVerified ? `● VERIFIED: @${currentVal}` : (currentVal ? `○ PENDING VERIFICATION: @${currentVal}` : '○ NOT CONNECTED')}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action buttons / input */}
-                    {isVerified ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span className="badge" style={{ background: 'var(--accent-green-dark)', color: 'var(--accent-green-bright)', border: '1px solid var(--accent-green)', fontSize: '0.65rem' }}>
-                          <Lock size={10} style={{ marginRight: '0.2rem' }} />
-                          LOCKED IN DB
-                        </span>
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handleUnlink(p.key)}
-                          disabled={isUnlinking}
-                          style={{ fontSize: '0.65rem', padding: '0.2rem 0.45rem', borderColor: 'var(--verdict-wrong)', color: 'var(--verdict-wrong)' }}
-                        >
-                          <Trash2 size={11} />
-                          <span>UNLINK</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexGrow: 1, maxWidth: '280px' }}>
-                        <input 
-                          type="text"
-                          placeholder={p.placeholder}
-                          value={handles[p.key] || ''}
-                          onChange={(e) => setHandles({ ...handles, [p.key]: e.target.value })}
-                          className="input-field"
-                          style={{ fontSize: '0.75rem', padding: '0.3rem 0.5rem' }}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleStartVerification(p.key, handles[p.key])}
-                          disabled={isGenerating || !handles[p.key]}
-                          style={{ fontSize: '0.68rem', padding: '0.3rem 0.55rem', whiteSpace: 'nowrap' }}
-                        >
-                          <span>VERIFY BIO</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Bottom Info Note */}
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)', borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
-              💡 Handles cannot be bound without completing the 1-minute profile bio verification. Random unverified handles are prevented from being saved to the database.
+              <button onClick={() => setActiveSession(null)} className="btn btn-secondary btn-sm">
+                Cancel
+              </button>
             </div>
           </div>
         )}
+
+        {/* Handles Form */}
+        <form onSubmit={handleSubmitAll} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {PLATFORMS_CONFIG.map(p => {
+            const currentVal = handles[p.key] || '';
+            const isVerified = Boolean(verifiedHandles[p.key] && currentVal);
+
+            return (
+              <div key={p.key} style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{ width: '130px', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <PlatformIcon platformKey={p.key} size={18} />
+                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    {p.name}
+                  </span>
+                </div>
+
+                <div style={{ position: 'relative', flexGrow: 1 }}>
+                  <input 
+                    type="text"
+                    className="input-field"
+                    placeholder={p.placeholder}
+                    value={currentVal}
+                    onChange={(e) => setHandles(prev => ({ ...prev, [p.key]: e.target.value }))}
+                    style={{ fontSize: '0.82rem', padding: '0.4rem 0.65rem' }}
+                  />
+                </div>
+
+                {currentVal && (
+                  <button 
+                    type="button"
+                    onClick={() => handleStartVerification(p.key, currentVal)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '0.72rem', padding: '0.35rem 0.55rem' }}
+                    title="Verify Ownership"
+                  >
+                    <Key size={12} />
+                    <span>{isVerified ? 'Verified' : 'Verify'}</span>
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
+            <button type="button" onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Save & Close
+            </button>
+          </div>
+        </form>
 
       </div>
     </div>

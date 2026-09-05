@@ -29,21 +29,9 @@ app.use('/api', apiRouter);
 // API Status & Info endpoint
 app.get('/api/info', (req, res) => {
   res.json({
-    name: 'AlgoTracker CP & Problem Tracker API',
-    version: '2.1.0',
-    authProvider: 'Google OAuth SSO',
-    database: getDbStatus(),
-    platformsSupported: ['Codeforces', 'LeetCode', 'AtCoder', 'CodeChef', 'GeeksforGeeks', 'HackerRank'],
-    endpoints: [
-      'POST /api/auth/google - Google OAuth Sign-In & Verification',
-      'GET /api/auth/me - Get current user profile & stored problems',
-      'POST /api/auth/update-handles - Update bound CP handles with collision check',
-      'POST /api/auth/verify-handle - Verify handle ownership via profile bio token',
-      'POST /api/sync - Live Sync bound platform handles',
-      'GET /api/admin/status - Admin User Directory (Superuser only)',
-      'GET /api/contests - Upcoming contest schedule',
-      'GET /api/potd - Daily coding challenges across platforms'
-    ]
+    name: 'AlgoTracker API',
+    status: 'online',
+    version: '2.1.0'
   });
 });
 
@@ -59,14 +47,11 @@ if (fs.existsSync(clientDistPath)) {
     res.sendFile(path.join(clientDistPath, 'index.html'));
   });
 } else {
-  // If not built yet, return informative API root
+  // If not built yet, return simple health check
   app.get('/', (req, res) => {
     res.json({
-      name: 'AlgoTracker Backend Server',
-      status: 'Online',
-      database: getDbStatus(),
-      auth: 'Google OAuth Only',
-      notice: 'Frontend dist not built. Run "npm run build" in client folder or visit the dev frontend on http://localhost:3000'
+      name: 'AlgoTracker Backend API',
+      status: 'online'
     });
   });
 }

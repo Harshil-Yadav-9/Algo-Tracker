@@ -2,26 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   Shield, 
-  Lock, 
   CheckCircle2, 
   AlertCircle, 
-  Zap,
-  ArrowRight,
-  CheckSquare,
-  Square,
-  FileCheck2,
-  Terminal
+  Code2
 } from 'lucide-react';
 import { apiUrl } from '../services/api';
+import PlatformIcon, { GoogleIcon } from './PlatformIcons';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [googleClientId, setGoogleClientId] = useState('');
-  const [hasConsented, setHasConsented] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-
-  // Google email input
   const [devEmail, setDevEmail] = useState('');
 
   const googleBtnRef = useRef(null);
@@ -53,7 +45,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         window.google.accounts.id.renderButton(googleBtnRef.current, {
           theme: 'filled_black',
           size: 'large',
-          width: 320,
+          width: 300,
           text: 'continue_with',
           shape: 'rectangular'
         });
@@ -65,11 +57,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   // Handle Google Credential Token response
   const handleGoogleCredentialResponse = async (response) => {
-    if (!hasConsented) {
-      setErrorMsg('[AUTH_ERROR] Please review and accept the Google Sign-In consent agreement.');
-      return;
-    }
-
     setIsLoading(true);
     setErrorMsg('');
     try {
@@ -80,30 +67,25 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       }).then(r => r.json());
 
       if (res.success) {
-        setSuccessMsg(`[SUCCESS] Authenticated as ${res.user.name || res.user.email}`);
+        setSuccessMsg(`Welcome, ${res.user.name || res.user.email}!`);
         sessionStorage.setItem('algopulse_token', res.token);
         localStorage.setItem('algopulse_token', res.token);
         setTimeout(() => {
           onAuthSuccess(res.user, res.token, res.savedProblems);
           onClose();
-        }, 400);
+        }, 300);
       } else {
-        setErrorMsg(res.error || '[AUTH_FAIL] Google authentication failed.');
+        setErrorMsg(res.error || 'Google authentication failed.');
       }
     } catch (err) {
-      setErrorMsg('[ERROR] Failed to communicate with server.');
+      setErrorMsg('Failed to communicate with authentication server.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Direct Google Sign In
+  // Direct Google Sign In for dev
   const handleDirectGoogleLogin = async (customEmail = null) => {
-    if (!hasConsented) {
-      setErrorMsg('[AUTH_ERROR] Please check the consent box to authorize Google Sign-In.');
-      return;
-    }
-
     setIsLoading(true);
     setErrorMsg('');
 
@@ -125,195 +107,107 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       }).then(r => r.json());
 
       if (res.success) {
-        setSuccessMsg(`[SUCCESS] Authenticated: ${res.user.role === 'admin' ? 'ROOT ADMIN' : res.user.email}`);
+        setSuccessMsg(`Welcome, ${res.user.name || res.user.email}!`);
         sessionStorage.setItem('algopulse_token', res.token);
         localStorage.setItem('algopulse_token', res.token);
         setTimeout(() => {
           onAuthSuccess(res.user, res.token, res.savedProblems);
           onClose();
-        }, 400);
+        }, 300);
       } else {
-        setErrorMsg(res.error || '[AUTH_FAIL] Google authentication failed.');
+        setErrorMsg(res.error || 'Authentication failed.');
       }
     } catch (err) {
-      setErrorMsg('[ERROR] Server connection error.');
+      setErrorMsg('Server connection error.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="modal-backdrop">
+    <div className="modal-backdrop" onClick={onClose}>
       <div 
-        className="glass-card modal-content" 
+        className="modal-content" 
         style={{ 
-          maxWidth: '460px', 
-          width: '95%',
-          padding: '1.25rem 1.5rem',
+          maxWidth: '440px', 
+          padding: '1.75rem',
           position: 'relative'
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button 
           onClick={onClose}
           style={{
             position: 'absolute',
-            right: '0.85rem',
-            top: '0.85rem',
+            right: '1rem',
+            top: '1rem',
             background: 'transparent',
             border: 'none',
             color: 'var(--text-dim)',
-            cursor: 'pointer',
-            padding: '0.2rem'
+            cursor: 'pointer'
           }}
         >
           <X size={18} />
         </button>
 
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: 'var(--radius-sm)',
-            background: 'var(--accent-green-dark)',
-            border: '1px solid var(--accent-green)',
+            width: '44px',
+            height: '44px',
+            borderRadius: '10px',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-card)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--accent-green)'
+            margin: '0 auto 0.75rem auto'
           }}>
-            <Terminal size={16} />
+            <GoogleIcon size={22} />
           </div>
-          <div>
-            <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '0.04em' }}>
-              $ /usr/bin/oauth --google
-            </h2>
-            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-              Sole authentication source for verified handle binding
-            </p>
-          </div>
-        </div>
-
-        {/* Highlighted Consent & Authorization Paragraph */}
-        <div style={{
-          background: 'var(--bg-dark)',
-          border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-sm)',
-          padding: '0.75rem',
-          marginBottom: '0.75rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.35rem', color: 'var(--accent-green)' }}>
-            <FileCheck2 size={14} />
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              [CONSENT_NOTICE]
-            </span>
-          </div>
-          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.45, margin: 0 }}>
-            By continuing with Google Sign-In, you authorize <strong>AlgoTracker</strong> to authenticate your session and link your competitive programming profiles (Codeforces, LeetCode, AtCoder, CodeChef, GeeksforGeeks, HackerRank). All problem history is private and isolated to your Google account.
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+            Sign In with Google
+          </h2>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            Single sign-on to isolate and protect your competitive programming profile.
           </p>
         </div>
 
-        {/* Consent Checkbox */}
-        <div 
-          onClick={() => setHasConsented(!hasConsented)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.35rem 0',
-            cursor: 'pointer',
-            marginBottom: '0.75rem',
-            userSelect: 'none'
-          }}
-        >
-          {hasConsented ? (
-            <CheckSquare size={16} color="var(--accent-green-bright)" />
-          ) : (
-            <Square size={16} color="var(--text-dim)" />
-          )}
-          <span style={{ fontSize: '0.75rem', color: hasConsented ? 'var(--text-main)' : 'var(--text-dim)' }}>
-            [x] I authorize AlgoTracker Google authentication
-          </span>
-        </div>
-
-        {/* Feedback Messages */}
+        {/* Feedback alerts */}
         {errorMsg && (
-          <div style={{
-            padding: '0.5rem 0.75rem',
-            background: 'var(--bg-dark)',
-            border: '1px solid var(--verdict-wrong)',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--verdict-wrong)',
-            fontSize: '0.75rem',
-            marginBottom: '0.75rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem'
-          }}>
-            <AlertCircle size={14} style={{ flexShrink: 0 }} />
+          <div style={{ marginBottom: '1rem', padding: '0.6rem 0.85rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: 'var(--radius-sm)', color: '#f87171', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <AlertCircle size={15} />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div style={{
-            padding: '0.5rem 0.75rem',
-            background: 'var(--bg-dark)',
-            border: '1px solid var(--accent-green-bright)',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--accent-green-bright)',
-            fontSize: '0.75rem',
-            marginBottom: '0.75rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem'
-          }}>
-            <CheckCircle2 size={14} style={{ flexShrink: 0 }} />
+          <div style={{ marginBottom: '1rem', padding: '0.6rem 0.85rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: 'var(--radius-sm)', color: '#34d399', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <CheckCircle2 size={15} />
             <span>{successMsg}</span>
           </div>
         )}
 
-        {/* Primary Google Sign-In Controls */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          
-          {googleClientId && (
-            <div ref={googleBtnRef} style={{ minHeight: '40px' }}></div>
-          )}
+        {/* Google OAuth Button Container */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <div ref={googleBtnRef}></div>
 
-          {/* Quick Google Account Input for offline/custom Google login */}
-          <div style={{
-            background: 'var(--bg-dark)',
-            padding: '0.65rem 0.75rem',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-sm)'
-          }}>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)', display: 'block', marginBottom: '0.35rem' }}>
-              GOOGLE_ACCOUNT_EMAIL:
-            </span>
-            <div style={{ display: 'flex', gap: '0.4rem' }}>
-              <input 
-                type="email"
-                placeholder="user@gmail.com"
-                value={devEmail}
-                onChange={(e) => setDevEmail(e.target.value)}
-                className="input-field"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem' }}
-              />
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => handleDirectGoogleLogin(devEmail)}
-                disabled={isLoading || !devEmail || !hasConsented}
-                style={{ fontSize: '0.72rem', whiteSpace: 'nowrap' }}
-              >
-                SIGN_IN
-              </button>
-            </div>
-          </div>
-
+          <button 
+            onClick={() => handleDirectGoogleLogin()}
+            disabled={isLoading}
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}
+          >
+            <GoogleIcon size={16} />
+            <span>{isLoading ? 'Authenticating...' : 'Sign In with Google'}</span>
+          </button>
         </div>
 
+        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+            Your data is stored securely and never shared.
+          </span>
+        </div>
       </div>
     </div>
   );

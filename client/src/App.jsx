@@ -12,11 +12,19 @@ import AuthModal from './components/AuthModal';
 import ProblemNotesModal from './components/ProblemNotesModal';
 import LiveNotificationToast from './components/LiveNotificationToast';
 import WelcomeLanding from './components/WelcomeLanding';
-import { Shield, RotateCcw, AlertTriangle, Terminal } from 'lucide-react';
+import HandleVerificationPage from './components/HandleVerificationPage';
+import AccountPage from './components/AccountPage';
+import { Shield, RotateCcw, AlertTriangle, Code2 } from 'lucide-react';
 
 export default function App() {
-  // Navigation & UI state
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // Navigation state (supports hash routing)
+  const getInitialTab = () => {
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    const validTabs = ['dashboard', 'problems', 'contests', 'potd', 'analytics', 'verify', 'account', 'signin', 'admin'];
+    return validTabs.includes(hash) ? hash : 'dashboard';
+  };
+
+  const [activeTab, setActiveTabState] = useState(getInitialTab);
   const [isHandleModalOpen, setIsHandleModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState('login');
@@ -26,7 +34,7 @@ export default function App() {
   // Real-time newly solved questions notification state
   const [newlySolvedList, setNewlySolvedList] = useState([]);
 
-  // Auth token stored only for session recovery
+  // Auth token stored for session recovery
   const [token, setToken] = useState(() => {
     try {
       return localStorage.getItem('algopulse_token') || sessionStorage.getItem('algopulse_token') || '';
@@ -39,7 +47,7 @@ export default function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(Boolean(token));
   const isAdmin = currentUser?.role === 'admin';
 
-  // Handles (strictly loaded from authenticated MongoDB user profile)
+  // Handles
   const [handles, setHandles] = useState({
     codeforces: '',
     leetcode: '',
@@ -49,7 +57,7 @@ export default function App() {
     hackerrank: ''
   });
 
-  // User notes & bookmarks (strictly synced with MongoDB)
+  // User notes & bookmarks
   const [notes, setNotes] = useState({});
   const [bookmarks, setBookmarks] = useState({});
   const [potdCompletions, setPotdCompletions] = useState({});
@@ -64,10 +72,29 @@ export default function App() {
   const [contests, setContests] = useState([]);
   const [potdList, setPotdList] = useState([]);
 
-  // Admin Explorer Target State (for inspecting any handle in DB or not in DB)
+  // Admin Explorer Target State
   const [explorerTarget, setExplorerTarget] = useState(null);
 
-  // Ref to prevent duplicate sync collisions
+  // Set active tab & sync URL hash
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab);
+    window.location.hash = tab;
+  };
+
+  // Listen to hash changes (browser back/forward button)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      const validTabs = ['dashboard', 'problems', 'contests', 'potd', 'analytics', 'verify', 'account', 'signin', 'admin'];
+      if (validTabs.includes(hash)) {
+        setActiveTabState(hash);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const isSyncingRef = useRef(false);
   isSyncingRef.current = isSyncing;
 
@@ -90,7 +117,6 @@ export default function App() {
       if (res.success && res.user) {
         setCurrentUser(res.user);
         
-        // Populate state exclusively from MongoDB user profile
         if (res.user.handles) {
           setHandles(res.user.handles);
         }
@@ -98,7 +124,7 @@ export default function App() {
         if (res.user.notes) setNotes(res.user.notes);
         if (res.user.potdCompletions) setPotdCompletions(res.user.potdCompletions);
 
-        // Pre-hydrate problem list from MongoDB saved problems if available
+        // Pre-hydrate problem list
         if (res.savedProblems && Array.isArray(res.savedProblems) && res.savedProblems.length > 0) {
           setSyncData(prev => ({
             ...(prev || {}),
@@ -119,7 +145,6 @@ export default function App() {
         // Auto-sync for authenticated user on entry
         handleSync(res.user.handles || handles, authToken);
       } else {
-        // Expired or invalid token
         try {
           localStorage.removeItem('algopulse_token');
           sessionStorage.removeItem('algopulse_token');
@@ -140,7 +165,7 @@ export default function App() {
     fetchPOTD();
   }, []);
 
-  // Sync user state (notes/bookmarks/potd) directly to MongoDB
+  // Sync user state (notes/bookmarks/potd) to DB
   const syncUserStateToDB = async (updates) => {
     if (!token) return;
     try {
@@ -153,11 +178,10 @@ export default function App() {
         body: JSON.stringify(updates)
       });
     } catch (err) {
-      console.warn('MongoDB sync error:', err.message);
+      console.error('Failed to sync state:', err);
     }
   };
 
-  // Fetch Contests from Express API
   const fetchContests = async () => {
     try {
       const res = await fetch(apiUrl('/api/contests')).then(r => r.json());
@@ -165,120 +189,165 @@ export default function App() {
         setContests(res.contests);
       }
     } catch (err) {
-      console.warn('Error fetching contests:', err);
+      console.warn('Failed to fetch contests:', err);
     }
   };
 
-  // Fetch POTD from Express API
   const fetchPOTD = async () => {
     try {
       const res = await fetch(apiUrl('/api/potd')).then(r => r.json());
-      if (res.success && Array.isArray(res.potdList)) {
-        setPotdList(res.potdList);
+      if (res.success && Array.isArray(res.potd)) {
+        setPotdList(res.potd);
       }
     } catch (err) {
-      console.warn('Error fetching POTD:', err);
+      console.warn('Failed to fetch POTD:', err);
     }
   };
 
-  // Trigger Live Sync with Backend (with real-time newly solved questions diffing)
-  const handleSync = useCallback(async (handlesToSync = handles, customToken = token, isBackground = false, isExplorer = Boolean(explorerTarget)) => {
-    if (isSyncingRef.current) return;
+  // 3. Multi-Platform Sync Handler
+  const handleSync = useCallback(async (handlesToSync = handles, authToken = token) => {
+    const activeHandles = Object.fromEntries(
+      Object.entries(handlesToSync).filter(([_, h]) => Boolean(h && h.trim()))
+    );
 
-    if (!isBackground) setIsSyncing(true);
+    if (Object.keys(activeHandles).length === 0) {
+      setIsSyncing(false);
+      return;
+    }
+
+    if (isSyncingRef.current) return;
+    setIsSyncing(true);
     setSyncError(null);
 
     try {
       const headers = { 'Content-Type': 'application/json' };
-      const activeToken = customToken || token;
-      if (activeToken) {
-        headers['Authorization'] = `Bearer ${activeToken}`;
-      }
+      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
       const response = await fetch(apiUrl('/api/sync'), {
         method: 'POST',
         headers,
-        body: JSON.stringify({ handles: handlesToSync, isExplorer })
+        body: JSON.stringify({ handles: activeHandles })
       }).then(r => r.json());
 
       if (response.success) {
+        // Detect newly solved problems
+        if (syncData?.problems && response.problems) {
+          const oldSolvedIds = new Set(
+            syncData.problems.filter(p => p.verdict === 'Solved').map(p => p.id)
+          );
+          const newSolves = response.problems.filter(
+            p => p.verdict === 'Solved' && !oldSolvedIds.has(p.id)
+          );
+          if (newSolves.length > 0) {
+            setNewlySolvedList(newSolves);
+          }
+        }
+
         setSyncData(response);
         setLastSyncedTime(new Date());
-
-        // Check for newly solved questions in real-time
-        if (response.newlySolved && response.newlySolved.length > 0) {
-          setNewlySolvedList(response.newlySolved);
-        }
       } else {
-        if (!isBackground) {
-          setSyncError(response.error || 'Failed to sync platform handles');
-        }
+        setSyncError(response.error || 'Failed to synchronize solves.');
       }
     } catch (err) {
-      console.error('Sync failed:', err);
-      if (!isBackground) {
-        setSyncError('Could not connect to backend server. Make sure server is running.');
-      }
+      setSyncError('Network error connecting to backend sync service.');
     } finally {
-      if (!isBackground) setIsSyncing(false);
+      setIsSyncing(false);
     }
-  }, [handles, token, explorerTarget]);
+  }, [handles, token, syncData]);
 
-  // 3. REAL-TIME TAB FOCUS & VISIBILITY CHANGE AUTO-SYNC LISTENER
+  // Window Focus / Visibility change auto-sync daemon
   useEffect(() => {
-    if (!currentUser) return;
-
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        handleSync(handles, token, true, Boolean(explorerTarget));
+      if (document.visibilityState === 'visible' && currentUser && !isSyncingRef.current) {
+        const lastSyncAgeMs = lastSyncedTime ? Date.now() - lastSyncedTime.getTime() : Infinity;
+        if (lastSyncAgeMs > 45000) {
+          handleSync(handles, token);
+        }
       }
-    };
-
-    const handleWindowFocus = () => {
-      handleSync(handles, token, true, Boolean(explorerTarget));
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleWindowFocus);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [currentUser, handles, token, lastSyncedTime, handleSync]);
 
-    // 4. Active background heartbeat (syncs every 35s while user has tab open)
-    const heartbeatInterval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        handleSync(handles, token, true, Boolean(explorerTarget));
+  // Handle Save (Updating bound handles)
+  const handleSaveHandles = async (newHandles) => {
+    setHandles(newHandles);
+
+    if (currentUser && token) {
+      try {
+        const res = await fetch(apiUrl('/api/auth/update-handles'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ handles: newHandles })
+        }).then(r => r.json());
+
+        if (res.success) {
+          setCurrentUser(res.user);
+        } else {
+          alert(res.error || 'Could not update handles.');
+        }
+      } catch (err) {
+        console.error('Failed to update handles:', err);
       }
-    }, 35000);
+    }
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleWindowFocus);
-      clearInterval(heartbeatInterval);
-    };
-  }, [handleSync, handles, token, currentUser, explorerTarget]);
+    handleSync(newHandles, token);
+  };
 
-  // Auth Success Handler
-  const handleAuthSuccess = (user, authToken, initialSavedProblems = []) => {
+  // Bookmarking problem
+  const handleToggleBookmark = (problemId) => {
+    const updated = { ...bookmarks, [problemId]: !bookmarks[problemId] };
+    if (!updated[problemId]) delete updated[problemId];
+    setBookmarks(updated);
+    syncUserStateToDB({ bookmarks: updated });
+  };
+
+  // Notes & Revision state
+  const handleSaveNote = (problemId, noteData) => {
+    const updated = { ...notes, [problemId]: noteData };
+    setNotes(updated);
+    syncUserStateToDB({ notes: updated });
+  };
+
+  // POTD completion toggle
+  const handleTogglePOTD = (potdKey) => {
+    const updated = { ...potdCompletions, [potdKey]: !potdCompletions[potdKey] };
+    if (!updated[potdKey]) delete updated[potdKey];
+    setPotdCompletions(updated);
+    syncUserStateToDB({ potdCompletions: updated });
+  };
+
+  // Auth handlers
+  const handleOpenAuthModal = (tab = 'login') => {
+    setAuthModalTab(tab);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleAuthSuccess = (user, authToken, savedProblems) => {
     setCurrentUser(user);
     setToken(authToken);
-    setExplorerTarget(null);
-    if (user.handles) {
-      setHandles(user.handles);
-    }
+    if (user.handles) setHandles(user.handles);
     if (user.bookmarks) setBookmarks(user.bookmarks);
     if (user.notes) setNotes(user.notes);
     if (user.potdCompletions) setPotdCompletions(user.potdCompletions);
 
-    if (initialSavedProblems && initialSavedProblems.length > 0) {
+    if (savedProblems && savedProblems.length > 0) {
       setSyncData(prev => ({
         ...(prev || {}),
         success: true,
-        problems: initialSavedProblems
+        problems: savedProblems,
+        summary: user.lastSyncStats || prev?.summary
       }));
     }
 
+    setActiveTab('dashboard');
     handleSync(user.handles || handles, authToken);
   };
 
-  // Logout Handler (Clears all in-memory user data & session)
   const handleLogout = () => {
     try {
       localStorage.removeItem('algopulse_token');
@@ -288,108 +357,49 @@ export default function App() {
     setCurrentUser(null);
     setSyncData(null);
     setExplorerTarget(null);
-    setNotes({});
-    setBookmarks({});
-    setPotdCompletions({});
-    setHandles({ codeforces: '', leetcode: '', atcoder: '', codechef: '', gfg: '', hackerrank: '' });
     setActiveTab('dashboard');
   };
 
-  const handleOpenAuthModal = (initialTab = 'user') => {
-    setAuthModalTab(initialTab);
-    setIsAuthModalOpen(true);
-  };
-
-  // Save new handles from modal
-  const handleSaveHandles = (newHandles) => {
-    setHandles(newHandles);
-    setExplorerTarget(null);
-    handleSync(newHandles, token, false, false);
-  };
-
-  // Admin: Inspect specific registered user
-  const handleInspectUser = (userToInspect) => {
-    if (userToInspect.handles) {
-      setExplorerTarget({
-        isExplorer: true,
-        name: `@${userToInspect.username} (${userToInspect.email || 'Registered User'})`,
-        inDb: true,
-        description: `Inspecting registered MongoDB user profile (@${userToInspect.username})`,
-        handles: userToInspect.handles
-      });
-      setHandles(userToInspect.handles);
-      handleSync(userToInspect.handles, token, false, true);
-      setActiveTab('dashboard');
-    }
-  };
-
-  // Admin: Universal Explorer on-the-fly sync (checks ANY handle in or out of DB)
-  const handleSyncCustomHandles = (customHandles, targetInfo) => {
-    setExplorerTarget({
-      isExplorer: true,
-      name: targetInfo?.name || 'Custom Handles',
-      inDb: Boolean(targetInfo?.inDb),
-      description: targetInfo?.description || 'Inspecting arbitrary CP handles live',
-      handles: customHandles
-    });
-    setHandles(customHandles);
-    handleSync(customHandles, token, false, true);
-    setActiveTab('dashboard');
-  };
-
-  // Return from Explorer Mode back to Admin's own account
-  const handleReturnToMyAccount = () => {
-    setExplorerTarget(null);
-    const myHandles = currentUser?.handles || { codeforces: '', leetcode: '', atcoder: '', codechef: '', gfg: '', hackerrank: '' };
-    setHandles(myHandles);
-    handleSync(myHandles, token, false, false);
-  };
-
-  // Toggle Bookmark (Synced directly to MongoDB)
-  const handleToggleBookmark = (problemId) => {
-    setBookmarks(prev => {
-      const updated = { ...prev, [problemId]: !prev[problemId] };
-      if (!updated[problemId]) delete updated[problemId];
-      syncUserStateToDB({ bookmarks: updated });
-      return updated;
-    });
-  };
-
-  // Save Problem Note (Synced directly to MongoDB)
-  const handleSaveNote = (problemId, noteData) => {
-    setNotes(prev => {
-      const updated = { ...prev, [problemId]: noteData };
-      syncUserStateToDB({ notes: updated });
-      return updated;
-    });
-  };
-
-  // Toggle POTD completion (Synced directly to MongoDB)
-  const handleTogglePOTD = (key) => {
-    setPotdCompletions(prev => {
-      const updated = { ...prev, [key]: !prev[key] };
-      if (!updated[key]) delete updated[key];
-      syncUserStateToDB({ potdCompletions: updated });
-      return updated;
-    });
-  };
-
-  // Navigation helper from dashboard cards
+  // Concept navigation shortcut
   const handleNavigateConcept = (conceptName) => {
     setSelectedConceptFilter(conceptName);
     setActiveTab('problems');
   };
 
+  // Admin inspect user
+  const handleInspectUser = (user) => {
+    setExplorerTarget({
+      name: user.username || user.name || user.email,
+      handles: user.handles || {},
+      description: `Inspecting @${user.username || user.email}`
+    });
+    handleSync(user.handles || {}, token);
+    setActiveTab('dashboard');
+  };
+
+  const handleSyncCustomHandles = (customHandles, targetInfo) => {
+    setExplorerTarget(targetInfo);
+    handleSync(customHandles, token);
+    setActiveTab('dashboard');
+  };
+
+  const handleReturnToMyAccount = () => {
+    setExplorerTarget(null);
+    if (currentUser?.handles) {
+      handleSync(currentUser.handles, token);
+    }
+  };
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* Real-time Toast Alert when user solves a new problem in another tab */}
+      {/* Real-time celebration toast for newly solved questions */}
       <LiveNotificationToast 
-        newProblems={newlySolvedList}
-        onClose={() => setNewlySolvedList([])}
+        newlySolvedList={newlySolvedList}
+        onDismiss={() => setNewlySolvedList([])}
       />
 
-      {/* Top Sticky Navigation */}
+      {/* Global Navigation Header */}
       <Navbar 
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -408,20 +418,23 @@ export default function App() {
       {/* Main Content Area */}
       <main className="app-container" style={{ flexGrow: 1, paddingBottom: '2rem' }}>
         
-        {/* If user is NOT authenticated, show Welcome / Sign In Portal Barrier */}
-        {!currentUser && !isAuthChecking && (
-          <WelcomeLanding onOpenAuthModal={handleOpenAuthModal} />
+        {/* Unauthenticated Home / Barrier if on dashboard with no user */}
+        {!currentUser && !isAuthChecking && activeTab === 'dashboard' && (
+          <WelcomeLanding 
+            onOpenAuthModal={() => handleOpenAuthModal('login')} 
+            onNavigateToTab={setActiveTab}
+          />
         )}
 
-        {/* If user is authenticated, render active dashboard tabs */}
-        {currentUser && (
+        {/* Tab 1: Dashboard (When Authenticated) */}
+        {currentUser && activeTab === 'dashboard' && (
           <>
-            {/* Superuser Admin Explorer Active Banner */}
+            {/* Admin Explorer Banner */}
             {explorerTarget && (
               <div className="glass-card" style={{
-                padding: '0.6rem 0.85rem',
+                padding: '0.75rem 1rem',
                 borderLeft: '4px solid var(--accent-green-bright)',
-                marginBottom: '0.85rem',
+                marginBottom: '1rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -429,27 +442,13 @@ export default function App() {
                 gap: '0.5rem'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{
-                    padding: '0.2rem 0.45rem',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--accent-green-dark)',
-                    border: '1px solid var(--accent-green)',
-                    color: 'var(--accent-green-bright)',
-                    fontWeight: 800,
-                    fontSize: '0.68rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem'
-                  }}>
-                    <Shield size={12} />
-                    <span>EXPLORER_MODE</span>
-                  </div>
+                  <Shield size={16} color="var(--accent-green-bright)" />
                   <div>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                      [INSPECTING]: {explorerTarget.name || 'Custom Handles'}
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                      Inspecting: {explorerTarget.name}
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-                      {explorerTarget.description || (explorerTarget.inDb ? 'Inspecting registered user data' : 'External handles (live platform fetch, DB untouched)')}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {explorerTarget.description}
                     </div>
                   </div>
                 </div>
@@ -457,116 +456,134 @@ export default function App() {
                 <button 
                   className="btn btn-secondary btn-sm"
                   onClick={handleReturnToMyAccount}
-                  style={{ fontSize: '0.72rem', fontWeight: 600 }}
                 >
                   <RotateCcw size={12} />
-                  <span>RETURN_TO_ROOT</span>
+                  <span>Return to My Account</span>
                 </button>
               </div>
             )}
 
-            {/* Sync error banner if any */}
+            {/* Sync error banner */}
             {syncError && (
               <div className="glass-card" style={{
-                padding: '0.6rem 0.85rem',
-                background: 'var(--bg-dark)',
-                border: '1px solid var(--verdict-wrong)',
-                marginBottom: '0.85rem',
+                padding: '0.75rem 1rem',
+                border: '1px solid #ef4444',
+                background: 'rgba(239, 68, 68, 0.08)',
+                marginBottom: '1rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                color: 'var(--verdict-wrong)',
-                fontSize: '0.75rem'
+                color: '#f87171',
+                fontSize: '0.8rem'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <AlertTriangle size={14} />
-                  <span>[SYNC_WARNING]: {syncError}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <AlertTriangle size={15} />
+                  <span>{syncError}</span>
                 </div>
-                <button className="btn btn-secondary btn-sm" onClick={() => handleSync(handles)} style={{ fontSize: '0.7rem' }}>
-                  RETRY_SYNC
+                <button className="btn btn-secondary btn-sm" onClick={() => handleSync(handles)} style={{ fontSize: '0.72rem' }}>
+                  Retry Sync
                 </button>
               </div>
             )}
 
-            {/* Tab 1: Dashboard */}
-            {activeTab === 'dashboard' && (
-              <Dashboard 
-                syncData={syncData}
-                potdList={potdList}
-                contests={contests}
-                onNavigateToTab={setActiveTab}
-                onSelectConcept={handleNavigateConcept}
-                onOpenHandleModal={() => setIsHandleModalOpen(true)}
-              />
-            )}
-
-            {/* Tab 2: Problem Tracker */}
-            {activeTab === 'problems' && (
-              <ProblemTracker 
-                problems={syncData?.problems || []}
-                concepts={syncData?.concepts || []}
-                bookmarks={bookmarks}
-                notes={notes}
-                onToggleBookmark={handleToggleBookmark}
-                onOpenNotesModal={(prob) => setActiveNotesProblem(prob)}
-                selectedConceptFilter={selectedConceptFilter}
-                onClearConceptFilter={() => setSelectedConceptFilter('all')}
-              />
-            )}
-
-            {/* Tab 3: Upcoming Contests */}
-            {activeTab === 'contests' && (
-              <ContestsHub 
-                contests={contests}
-              />
-            )}
-
-            {/* Tab 4: POTD Hub */}
-            {activeTab === 'potd' && (
-              <POTDHub 
-                potdList={potdList}
-                potdCompletions={potdCompletions}
-                onTogglePOTDComplete={handleTogglePOTD}
-              />
-            )}
-
-            {/* Tab 5: Analytics & Skillset */}
-            {activeTab === 'analytics' && (
-              <AnalyticsView 
-                syncData={syncData}
-                onSelectConcept={handleNavigateConcept}
-              />
-            )}
-
-            {/* Tab 6: Admin Console (Superuser only) */}
-            {activeTab === 'admin' && isAdmin && (
-              <AdminPanel 
-                token={token}
-                onInspectUser={handleInspectUser}
-                onSyncCustomHandles={handleSyncCustomHandles}
-              />
-            )}
+            <Dashboard 
+              syncData={syncData}
+              potdList={potdList}
+              contests={contests}
+              onNavigateToTab={setActiveTab}
+              onSelectConcept={handleNavigateConcept}
+              onOpenHandleModal={() => setIsHandleModalOpen(true)}
+            />
           </>
+        )}
+
+        {/* Tab 2: Problem Tracker */}
+        {activeTab === 'problems' && (
+          <ProblemTracker 
+            problems={syncData?.problems || []}
+            concepts={syncData?.concepts || []}
+            bookmarks={bookmarks}
+            notes={notes}
+            onToggleBookmark={handleToggleBookmark}
+            onOpenNotesModal={(prob) => setActiveNotesProblem(prob)}
+            selectedConceptFilter={selectedConceptFilter}
+            onClearConceptFilter={() => setSelectedConceptFilter('all')}
+          />
+        )}
+
+        {/* Tab 3: Upcoming Contests */}
+        {activeTab === 'contests' && (
+          <ContestsHub 
+            contests={contests}
+          />
+        )}
+
+        {/* Tab 4: POTD Hub */}
+        {activeTab === 'potd' && (
+          <POTDHub 
+            potdList={potdList}
+            potdCompletions={potdCompletions}
+            onTogglePOTDComplete={handleTogglePOTD}
+          />
+        )}
+
+        {/* Tab 5: Analytics & Skillset */}
+        {activeTab === 'analytics' && (
+          <AnalyticsView 
+            syncData={syncData}
+            onSelectConcept={handleNavigateConcept}
+          />
+        )}
+
+        {/* Tab 6: Handle Verification Page (Dedicated Route) */}
+        {activeTab === 'verify' && (
+          <HandleVerificationPage 
+            currentHandles={handles}
+            currentUser={currentUser}
+            onSaveHandles={handleSaveHandles}
+            onOpenAuthModal={() => handleOpenAuthModal('login')}
+          />
+        )}
+
+        {/* Tab 7: Dedicated Sign In / Account Profile Page */}
+        {(activeTab === 'signin' || activeTab === 'account') && (
+          <AccountPage 
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            onAuthSuccess={handleAuthSuccess}
+            onNavigateToTab={setActiveTab}
+            handles={handles}
+            summary={syncData?.summary}
+          />
+        )}
+
+        {/* Tab 8: Admin Console (Superuser only) */}
+        {activeTab === 'admin' && isAdmin && (
+          <AdminPanel 
+            token={token}
+            onInspectUser={handleInspectUser}
+            onSyncCustomHandles={handleSyncCustomHandles}
+          />
         )}
 
       </main>
 
       {/* Footer */}
       <footer style={{
-        borderTop: '1px solid var(--border-color)',
-        padding: '0.65rem 0',
+        borderTop: '1px solid var(--border-subtle)',
+        padding: '1rem 0',
         textAlign: 'center',
-        fontSize: '0.72rem',
+        fontSize: '0.78rem',
         color: 'var(--text-dim)',
         marginTop: 'auto',
-        background: 'var(--bg-dark)'
+        background: 'var(--bg-secondary)'
       }}>
         <div className="app-container" style={{ paddingBottom: 0 }}>
-          <p>// algo::tracker • competitive programming live aggregator • real-time matrix sync engine</p>
+          <p>AlgoTracker • Multi-Platform Competitive Programming Tracker</p>
         </div>
       </footer>
 
-      {/* Modal 1: Platform Handles Config / Universal Switcher */}
+      {/* Modal 1: Platform Handles Config */}
       <HandleModal 
         isOpen={isHandleModalOpen}
         onClose={() => setIsHandleModalOpen(false)}
@@ -575,7 +592,7 @@ export default function App() {
         currentUser={currentUser}
       />
 
-      {/* Modal 2: Auth Modal (Google OAuth) */}
+      {/* Modal 2: Auth Modal */}
       <AuthModal 
         isOpen={isAuthModalOpen}
         initialTab={authModalTab}
@@ -583,7 +600,7 @@ export default function App() {
         onAuthSuccess={handleAuthSuccess}
       />
 
-      {/* Modal 3: Problem Notes & Revision Modal */}
+      {/* Modal 3: Problem Notes Modal */}
       <ProblemNotesModal 
         problem={activeNotesProblem}
         isOpen={Boolean(activeNotesProblem)}

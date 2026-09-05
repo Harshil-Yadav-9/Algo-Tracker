@@ -3,7 +3,6 @@ import { apiUrl } from '../services/api';
 import { 
   Shield, 
   Users, 
-  Database, 
   Search, 
   ExternalLink, 
   Trash2, 
@@ -12,9 +11,9 @@ import {
   Zap, 
   Eye,
   Server,
-  Terminal,
   Code2
 } from 'lucide-react';
+import PlatformIcon from './PlatformIcons';
 
 export default function AdminPanel({ token, onInspectUser, onSyncCustomHandles }) {
   const [adminData, setAdminData] = useState(null);
@@ -66,19 +65,9 @@ export default function AdminPanel({ token, onInspectUser, onSyncCustomHandles }
     }
   }, [token]);
 
-  // Check if a handle is currently bound in DB by any registered user
-  const getHandleDbOwner = (platform, handle) => {
-    if (!handle || !handle.trim() || !adminData?.users) return null;
-    const clean = handle.trim().toLowerCase();
-    return adminData.users.find(u => {
-      const h = u.handles?.[platform];
-      return h && h.toLowerCase() === clean;
-    });
-  };
-
   // Delete a user
   const handleDeleteUser = async (userId, username) => {
-    if (!window.confirm(`[CONFIRM_DELETE] User "${username}"?`)) return;
+    if (!window.confirm(`Are you sure you want to delete user "${username}"?`)) return;
 
     try {
       const res = await fetch(apiUrl(`/api/admin/user/${userId}`), {
@@ -104,20 +93,10 @@ export default function AdminPanel({ token, onInspectUser, onSyncCustomHandles }
     if (onSyncCustomHandles) {
       setIsExploring(true);
       
-      // Check if any handle is in DB
-      const inDbOwners = [];
-      Object.entries(explorerHandles).forEach(([plat, h]) => {
-        const owner = getHandleDbOwner(plat, h);
-        if (owner) inDbOwners.push(`${plat}: @${h} (${owner.username})`);
-      });
-
       const targetInfo = {
-        name: inDbOwners.length > 0 ? `Explorer (${inDbOwners.join(', ')})` : 'Universal Explorer',
+        name: 'Universal Explorer',
         handles: { ...explorerHandles },
-        inDb: inDbOwners.length > 0,
-        description: inDbOwners.length > 0 
-          ? `Contains handles registered in MongoDB` 
-          : `External Handles (Not stored in MongoDB)`
+        description: 'Live Platform Explorer'
       };
 
       onSyncCustomHandles(explorerHandles, targetInfo);
@@ -144,11 +123,11 @@ export default function AdminPanel({ token, onInspectUser, onSyncCustomHandles }
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       
       {/* Admin Banner */}
       <div className="glass-card" style={{
-        padding: '0.85rem 1.25rem',
+        padding: '1.25rem 1.5rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -157,29 +136,29 @@ export default function AdminPanel({ token, onInspectUser, onSyncCustomHandles }
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
-            width: '36px',
-            height: '36px',
+            width: '40px',
+            height: '40px',
             borderRadius: 'var(--radius-sm)',
-            background: 'var(--accent-green-dark)',
-            border: '1px solid var(--accent-green)',
+            background: 'rgba(234, 179, 8, 0.15)',
+            border: '1px solid #ca8a04',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--accent-green)'
+            color: '#fde047'
           }}>
-            <Shield size={20} />
+            <Shield size={22} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', letterSpacing: '0.04em' }}>
-                $ /usr/bin/superadmin --explore --users
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.01em' }}>
+                Admin Control Center
               </h2>
-              <span className="badge" style={{ background: 'var(--accent-green-dark)', color: 'var(--accent-green-bright)', border: '1px solid var(--accent-green)' }}>
-                ROOT_ACCESS
+              <span className="badge" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#fde047', border: '1px solid #ca8a04' }}>
+                Superuser
               </span>
             </div>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Universal Handle Explorer (inspect any handle in DB or external) & MongoDB User Directory.
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              Universal Handle Explorer & Registered User Directory.
             </p>
           </div>
         </div>
@@ -188,448 +167,224 @@ export default function AdminPanel({ token, onInspectUser, onSyncCustomHandles }
           className="btn btn-secondary btn-sm"
           onClick={fetchAdminOverview}
           disabled={isLoading}
-          style={{ fontSize: '0.75rem' }}
+          style={{ fontSize: '0.8rem' }}
         >
-          <RefreshCw size={12} className={isLoading ? 'spin-animation' : ''} />
-          <span>REFRESH_STATE</span>
+          <RefreshCw size={13} className={isLoading ? 'spin-animation' : ''} />
+          <span>Refresh Data</span>
         </button>
       </div>
 
       {/* Admin Metric Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '0.75rem'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '0.85rem'
       }}>
         {/* Metric 1: Total Users */}
-        <div className="glass-card" style={{ padding: '0.75rem 1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>REGISTERED_USERS</span>
-            <Users size={14} color="var(--accent-green)" />
+        <div className="glass-card" style={{ padding: '1rem 1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 600 }}>Registered Users</span>
+            <Users size={16} color="var(--accent-green)" />
           </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)' }}>
             {adminData?.totalUsers || 0}
           </div>
-          <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>Stored in Database</span>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Active user accounts</span>
         </div>
 
-        {/* Metric 2: Database Mode */}
-        <div className="glass-card" style={{ padding: '0.75rem 1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>STORAGE_ENGINE</span>
-            <Database size={14} color="var(--accent-green)" />
+        {/* Metric 2: Sync Status */}
+        <div className="glass-card" style={{ padding: '1rem 1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 600 }}>Sync Service</span>
+            <Server size={16} color="var(--accent-green)" />
           </div>
-          <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
-            {adminData?.dbStatus?.type || 'Persistent Storage'}
+          <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--accent-green-bright)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.35rem' }}>
+            <span className="pulse-dot"></span>
+            <span>Online & Ready</span>
           </div>
-          <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
-            {adminData?.dbStatus?.storagePath || 'In-Memory (Non-Persistent)'}
-          </span>
-        </div>
-
-        {/* Metric 3: Real-Time Sync Status */}
-        <div className="glass-card" style={{ padding: '0.75rem 1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>SYNC_DAEMON</span>
-            <Server size={14} color="var(--accent-green)" />
-          </div>
-          <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--accent-green-bright)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-green-bright)', display: 'inline-block' }}></span>
-            <span>ACTIVE & ONLINE</span>
-          </div>
-          <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>Multi-platform crawler</span>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Multi-platform crawler</span>
         </div>
       </div>
 
       {/* Feature 1: Universal Handle Explorer */}
-      <div className="glass-card" style={{ padding: '0.85rem 1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+      <div className="glass-card" style={{ padding: '1.25rem 1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Terminal size={16} color="var(--accent-green)" />
-              <h3 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase' }}>
-                [UNIVERSAL_HANDLE_EXPLORER]
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Search size={18} color="var(--accent-green)" />
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                Universal Handle Explorer
               </h3>
             </div>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Inspect ANY handle live on-demand (in DB or external e.g. tourist, neal_wu). Live DB check verifies registered ownership.
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+              Inspect and live-aggregate statistics for any arbitrary handles across platforms without modifying user accounts.
             </p>
           </div>
 
-          {/* Quick Presets */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>PRESETS:</span>
+          {/* Quick preset buttons */}
+          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
             <button 
-              type="button"
+              type="button" 
               className="btn btn-secondary btn-sm"
               onClick={() => loadPreset({ codeforces: 'tourist', leetcode: 'neal_wu', atcoder: 'tourist' })}
-              style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem' }}
+              style={{ fontSize: '0.72rem' }}
             >
-              Tourist & Neal
+              Legendary Preset
             </button>
             <button 
-              type="button"
+              type="button" 
               className="btn btn-secondary btn-sm"
-              onClick={() => loadPreset({ codeforces: 'jiangly', leetcode: 'jiangly', atcoder: 'jiangly' })}
-              style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem' }}
+              onClick={() => loadPreset({ codeforces: 'Benq', leetcode: 'lee215', codechef: 'gennady' })}
+              style={{ fontSize: '0.72rem' }}
             >
-              Jiangly
-            </button>
-            <button 
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => loadPreset({ codeforces: 'Benq', leetcode: 'benq', atcoder: 'Benq' })}
-              style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem' }}
-            >
-              Benq
-            </button>
-            <button 
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => loadPreset({ codeforces: 'ecnerwala', leetcode: 'ecnerwala', atcoder: 'ecnerwala' })}
-              style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem' }}
-            >
-              Ecnerwala
+              Pro Preset
             </button>
           </div>
         </div>
 
-        {/* Multi-Platform Explorer Inputs */}
         <form onSubmit={handleRunExplorerSync}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '0.6rem',
-            marginBottom: '0.75rem'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '0.65rem',
+            marginBottom: '1rem'
           }}>
-            {/* Codeforces */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>CODEFORCES</span>
-                {explorerHandles.codeforces && (
-                  (() => {
-                    const owner = getHandleDbOwner('codeforces', explorerHandles.codeforces);
-                    return owner ? (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--accent-green-bright)' }}>
-                        ● IN_DB ({owner.username})
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)' }}>
-                        ○ EXTERNAL
-                      </span>
-                    );
-                  })()
-                )}
+            {['codeforces', 'leetcode', 'atcoder', 'codechef', 'gfg', 'hackerrank'].map(plat => (
+              <div key={plat}>
+                <label style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.35rem', textTransform: 'capitalize' }}>
+                  <PlatformIcon platformKey={plat} size={14} />
+                  <span>{plat}</span>
+                </label>
+                <input 
+                  type="text"
+                  className="input-field"
+                  placeholder={`Handle on ${plat}`}
+                  value={explorerHandles[plat] || ''}
+                  onChange={(e) => setExplorerHandles(prev => ({ ...prev, [plat]: e.target.value }))}
+                  style={{ fontSize: '0.8rem' }}
+                />
               </div>
-              <input 
-                type="text"
-                value={explorerHandles.codeforces}
-                onChange={(e) => setExplorerHandles({ ...explorerHandles, codeforces: e.target.value })}
-                className="input-field"
-                placeholder="tourist"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem' }}
-              />
-            </div>
-
-            {/* LeetCode */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>LEETCODE</span>
-                {explorerHandles.leetcode && (
-                  (() => {
-                    const owner = getHandleDbOwner('leetcode', explorerHandles.leetcode);
-                    return owner ? (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--accent-green-bright)' }}>
-                        ● IN_DB ({owner.username})
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)' }}>
-                        ○ EXTERNAL
-                      </span>
-                    );
-                  })()
-                )}
-              </div>
-              <input 
-                type="text"
-                value={explorerHandles.leetcode}
-                onChange={(e) => setExplorerHandles({ ...explorerHandles, leetcode: e.target.value })}
-                className="input-field"
-                placeholder="neal_wu"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem' }}
-              />
-            </div>
-
-            {/* AtCoder */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>ATCODER</span>
-                {explorerHandles.atcoder && (
-                  (() => {
-                    const owner = getHandleDbOwner('atcoder', explorerHandles.atcoder);
-                    return owner ? (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--accent-green-bright)' }}>
-                        ● IN_DB ({owner.username})
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)' }}>
-                        ○ EXTERNAL
-                      </span>
-                    );
-                  })()
-                )}
-              </div>
-              <input 
-                type="text"
-                value={explorerHandles.atcoder}
-                onChange={(e) => setExplorerHandles({ ...explorerHandles, atcoder: e.target.value })}
-                className="input-field"
-                placeholder="tourist"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem' }}
-              />
-            </div>
-
-            {/* CodeChef */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>CODECHEF</span>
-                {explorerHandles.codechef && (
-                  (() => {
-                    const owner = getHandleDbOwner('codechef', explorerHandles.codechef);
-                    return owner ? (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--accent-green-bright)' }}>
-                        ● IN_DB ({owner.username})
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)' }}>
-                        ○ EXTERNAL
-                      </span>
-                    );
-                  })()
-                )}
-              </div>
-              <input 
-                type="text"
-                value={explorerHandles.codechef}
-                onChange={(e) => setExplorerHandles({ ...explorerHandles, codechef: e.target.value })}
-                className="input-field"
-                placeholder="chef_handle"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem' }}
-              />
-            </div>
-
-            {/* GFG */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>GEEKSFORGEEKS</span>
-                {explorerHandles.gfg && (
-                  (() => {
-                    const owner = getHandleDbOwner('gfg', explorerHandles.gfg);
-                    return owner ? (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--accent-green-bright)' }}>
-                        ● IN_DB ({owner.username})
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)' }}>
-                        ○ EXTERNAL
-                      </span>
-                    );
-                  })()
-                )}
-              </div>
-              <input 
-                type="text"
-                value={explorerHandles.gfg}
-                onChange={(e) => setExplorerHandles({ ...explorerHandles, gfg: e.target.value })}
-                className="input-field"
-                placeholder="gfg_handle"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem' }}
-              />
-            </div>
-
-            {/* HackerRank */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>HACKERRANK</span>
-                {explorerHandles.hackerrank && (
-                  (() => {
-                    const owner = getHandleDbOwner('hackerrank', explorerHandles.hackerrank);
-                    return owner ? (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--accent-green-bright)' }}>
-                        ● IN_DB ({owner.username})
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)' }}>
-                        ○ EXTERNAL
-                      </span>
-                    );
-                  })()
-                )}
-              </div>
-              <input 
-                type="text"
-                value={explorerHandles.hackerrank}
-                onChange={(e) => setExplorerHandles({ ...explorerHandles, hackerrank: e.target.value })}
-                className="input-field"
-                placeholder="hr_handle"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem' }}
-              />
-            </div>
+            ))}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-              // Syncs all entered handles live into the interactive Dashboard, Problem Tracker & Analytics.
-            </div>
-
-            <button 
-              type="submit" 
-              className="btn btn-primary btn-sm"
-              disabled={isExploring}
-              style={{ fontWeight: 700 }}
-            >
-              <Zap size={13} />
-              <span>{isExploring ? 'SYNCING_HANDLES...' : 'EXECUTE_EXPLORER_SYNC'}</span>
-            </button>
-          </div>
+          <button 
+            type="submit"
+            disabled={isExploring}
+            className="btn btn-primary"
+            style={{ padding: '0.55rem 1.25rem', fontSize: '0.85rem', fontWeight: 700 }}
+          >
+            <Zap size={15} className={isExploring ? 'spin-animation' : ''} />
+            <span>{isExploring ? 'Fetching Platform Data...' : 'Inspect Live Handles'}</span>
+          </button>
         </form>
       </div>
 
-      {/* Feature 2: Registered User Directory */}
-      <div className="glass-card" style={{ padding: '0.85rem 1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
-          <div>
-            <h3 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)', textTransform: 'uppercase' }}>
-              [USER_DIRECTORY]
+      {/* Feature 2: User Accounts Directory */}
+      <div className="glass-card" style={{ padding: '1.25rem 1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Users size={18} color="var(--accent-green)" />
+            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
+              User Directory ({filteredUsers.length})
             </h3>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Accounts registered in the database with bound platform handles and synced statistics.
-            </p>
           </div>
 
-          {/* Search input */}
           <div style={{ position: 'relative', minWidth: '220px' }}>
-            <Search size={13} color="var(--text-dim)" style={{ position: 'absolute', left: '0.6rem', top: '50%', transform: 'translateY(-50%)' }} />
+            <Search size={14} color="var(--text-dim)" style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)' }} />
             <input 
               type="text"
-              placeholder="grep user, handle, email..."
+              placeholder="Search user, email, handle..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
               className="input-field"
-              style={{ paddingLeft: '1.8rem', fontSize: '0.75rem', padding: '0.35rem 0.6rem 0.35rem 1.8rem' }}
+              style={{ paddingLeft: '2rem', fontSize: '0.78rem' }}
             />
           </div>
         </div>
 
         {/* User Table */}
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px', fontSize: '0.82rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-dim)', fontSize: '0.7rem', textTransform: 'uppercase' }}>
-                <th style={{ padding: '0.5rem 0.75rem' }}>User / Email</th>
+              <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-dim)', fontSize: '0.72rem' }}>
+                <th style={{ padding: '0.5rem 0.75rem' }}>User</th>
+                <th style={{ padding: '0.5rem 0.75rem' }}>Email</th>
                 <th style={{ padding: '0.5rem 0.75rem' }}>Role</th>
                 <th style={{ padding: '0.5rem 0.75rem' }}>Bound Handles</th>
-                <th style={{ padding: '0.5rem 0.75rem' }}>Solved</th>
-                <th style={{ padding: '0.5rem 0.75rem' }}>Created</th>
                 <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map(u => {
-                const isRootAdmin = u.username === 'admin';
-                const handles = u.handles || {};
-                const activeHandles = Object.entries(handles).filter(([k, v]) => Boolean(v && v.trim()));
-
-                return (
-                  <tr 
-                    key={u.id}
-                    style={{
-                      borderBottom: '1px solid var(--border-color)',
-                      fontSize: '0.78rem'
-                    }}
-                  >
-                    {/* User */}
-                    <td style={{ padding: '0.5rem 0.75rem' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{u.username}</div>
-                      {u.email && <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>{u.email}</div>}
-                    </td>
-
-                    {/* Role */}
-                    <td style={{ padding: '0.5rem 0.75rem' }}>
-                      <span className="badge" style={{
-                        background: u.role === 'admin' ? 'var(--accent-green-dark)' : 'var(--bg-tag)',
-                        color: u.role === 'admin' ? 'var(--accent-green-bright)' : 'var(--text-muted)',
-                        border: '1px solid var(--border-color)',
-                        fontSize: '0.65rem'
-                      }}>
-                        {u.role === 'admin' ? 'ROOT' : 'USER'}
-                      </span>
-                    </td>
-
-                    {/* Bound Handles */}
-                    <td style={{ padding: '0.5rem 0.75rem' }}>
-                      <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                        {activeHandles.length > 0 ? (
-                          activeHandles.map(([plat, handle]) => (
-                            <span key={plat} className="badge tag-terminal" style={{ fontSize: '0.65rem' }}>
-                              {plat}:{handle}
-                            </span>
-                          ))
-                        ) : (
-                          <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>// NONE</span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Solved Problems */}
-                    <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                      {u.lastSyncStats ? (
-                        <span style={{ color: 'var(--accent-green-bright)' }}>
-                          {u.lastSyncStats.totalSolved}
-                        </span>
+              {filteredUsers.map(u => (
+                <tr key={u._id || u.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                  <td style={{ padding: '0.65rem 0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {u.avatar ? (
+                        <img src={u.avatar} alt="" style={{ width: '22px', height: '22px', borderRadius: '4px' }} />
                       ) : (
-                        <span style={{ color: 'var(--text-dim)' }}>-</span>
+                        <Users size={14} />
                       )}
-                    </td>
+                      <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{u.username || u.name}</span>
+                    </div>
+                  </td>
 
-                    {/* Registered Date */}
-                    <td style={{ padding: '0.5rem 0.75rem', color: 'var(--text-dim)', fontSize: '0.7rem' }}>
-                      {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'system'}
-                    </td>
+                  <td style={{ padding: '0.65rem 0.75rem', color: 'var(--text-muted)' }}>
+                    {u.email}
+                  </td>
 
-                    {/* Actions */}
-                    <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+                  <td style={{ padding: '0.65rem 0.75rem' }}>
+                    <span className="badge" style={{
+                      background: u.role === 'admin' ? 'rgba(234, 179, 8, 0.15)' : 'var(--bg-surface)',
+                      color: u.role === 'admin' ? '#fde047' : 'var(--text-muted)'
+                    }}>
+                      {u.role?.toUpperCase()}
+                    </span>
+                  </td>
+
+                  <td style={{ padding: '0.65rem 0.75rem' }}>
+                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                      {Object.entries(u.handles || {}).map(([plat, handle]) => {
+                        if (!handle) return null;
+                        return (
+                          <span key={plat} className={`badge tag-${plat}`} style={{ fontSize: '0.65rem' }}>
+                            {plat}: @{handle}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </td>
+
+                  <td style={{ padding: '0.65rem 0.75rem', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                      <button 
+                        onClick={() => onInspectUser(u)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '0.72rem' }}
+                        title="Inspect user performance"
+                      >
+                        <Eye size={12} />
+                        <span>Inspect</span>
+                      </button>
+
+                      {u.role !== 'admin' && (
                         <button 
+                          onClick={() => handleDeleteUser(u._id || u.id, u.username || u.email)}
                           className="btn btn-secondary btn-sm"
-                          onClick={() => onInspectUser(u)}
-                          title="Inspect User Dashboard"
-                          style={{ padding: '0.2rem 0.45rem', fontSize: '0.7rem' }}
+                          style={{ color: '#f87171', padding: '0.25rem 0.45rem' }}
+                          title="Delete user"
                         >
-                          <Eye size={12} color="var(--accent-green)" />
-                          <span>INSPECT</span>
+                          <Trash2 size={12} />
                         </button>
-
-                        {!isRootAdmin && (
-                          <button 
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => handleDeleteUser(u.id, u.username)}
-                            title="Delete User"
-                            style={{ padding: '0.2rem 0.45rem', borderColor: 'var(--verdict-wrong)', color: 'var(--verdict-wrong)' }}
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
 
               {filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-dim)', fontSize: '0.75rem' }}>
-                    // No registered records match search query.
+                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No users found matching search filter.
                   </td>
                 </tr>
               )}

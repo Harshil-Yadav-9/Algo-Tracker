@@ -9,9 +9,9 @@ import {
   Calendar, 
   ArrowUpRight,
   BookOpen,
-  Cpu,
-  Terminal
+  Code2
 } from 'lucide-react';
+import PlatformIcon from './PlatformIcons';
 
 export default function Dashboard({ 
   syncData, 
@@ -41,26 +41,26 @@ export default function Dashboard({
     : 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       
-      {/* 1. Global Metrics Row (Compact 4-Column Terminal Stats) */}
+      {/* 1. Global Metrics Row (4 Columns) */}
       <section style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '0.75rem'
+        gap: '0.85rem'
       }}>
         {/* Metric 1: Total Solved */}
-        <div className="glass-card" style={{ padding: '0.85rem 1rem' }}>
+        <div className="glass-card" style={{ padding: '1rem 1.15rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 600 }}>[SOLVED_TOTAL]</span>
-            <CheckCircle2 size={14} color="#22c55e" />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Solved</span>
+            <CheckCircle2 size={16} color="var(--accent-green)" />
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f0fdf4', letterSpacing: '-0.02em' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
               {summary.totalSolved.toLocaleString()}
             </span>
-            <span style={{ fontSize: '0.75rem', color: '#4ade80' }}>
-              {solveRate}% rate
+            <span style={{ fontSize: '0.75rem', color: 'var(--accent-green-bright)', fontWeight: 600 }}>
+              {solveRate}% accuracy
             </span>
           </div>
           {/* Easy / Med / Hard mini bar */}
@@ -69,145 +69,130 @@ export default function Dashboard({
               className="progress-bar-fill" 
               style={{ 
                 width: `${summary.totalSolved ? (summary.easy / summary.totalSolved) * 100 : 33}%`, 
-                background: '#22c55e' 
+                background: '#10b981' 
               }} 
             />
             <div 
               className="progress-bar-fill" 
               style={{ 
                 width: `${summary.totalSolved ? (summary.medium / summary.totalSolved) * 100 : 33}%`, 
-                background: '#84cc16' 
+                background: '#f59e0b' 
               }} 
             />
             <div 
               className="progress-bar-fill" 
               style={{ 
                 width: `${summary.totalSolved ? (summary.hard / summary.totalSolved) * 100 : 34}%`, 
-                background: '#eab308' 
+                background: '#ef4444' 
               }} 
             />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#4ade80aa' }}>
-            <span>E:{summary.easy}</span>
-            <span>M:{summary.medium}</span>
-            <span>H:{summary.hard}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-dim)' }}>
+            <span>Easy: {summary.easy}</span>
+            <span>Med: {summary.medium}</span>
+            <span>Hard: {summary.hard}</span>
           </div>
         </div>
 
-        {/* Metric 2: Total Attempted */}
-        <div className="glass-card" style={{ padding: '0.85rem 1rem' }}>
+        {/* Metric 2: Total Submissions */}
+        <div className="glass-card" style={{ padding: '1rem 1.15rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 600 }}>[SUBMISSIONS]</span>
-            <XCircle size={14} color="#f87171" />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Submissions Tracked</span>
+            <Layers size={16} color="#38bdf8" />
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.2rem' }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f0fdf4', letterSpacing: '-0.02em' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
               {summary.totalSubmissions.toLocaleString()}
             </span>
-            <span style={{ fontSize: '0.72rem', color: '#f87171' }}>
-              ({summary.totalAttempted} unaccepted)
-            </span>
           </div>
-          <span style={{ fontSize: '0.68rem', color: '#4ade80aa' }}>
-            live diff engine active
-          </span>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+            Attempted: <strong style={{ color: 'var(--text-main)' }}>{summary.totalAttempted}</strong> problems
+          </div>
         </div>
 
-        {/* Metric 3: Connected Hubs */}
-        <div className="glass-card" style={{ padding: '0.85rem 1rem' }}>
+        {/* Metric 3: Connected Platforms */}
+        <div 
+          className="glass-card glass-card-interactive" 
+          style={{ padding: '1rem 1.15rem', cursor: 'pointer' }}
+          onClick={() => onNavigateToTab('verify')}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 600 }}>[PLATFORMS]</span>
-            <Layers size={14} color="#4ade80" />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Platforms Linked</span>
+            <Code2 size={16} color="#fbbf24" />
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f0fdf4', letterSpacing: '-0.02em' }}>
-              {platformBreakdown.length}/6
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.2rem' }}>
+            <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
+              {platformBreakdown.length}
             </span>
-            <span style={{ fontSize: '0.72rem', color: '#22c55e' }}>connected</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>/ 6 active</span>
           </div>
-          <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-            {['CF', 'LC', 'AC', 'CC', 'GFG', 'HR'].map(p => {
-              const isConn = platformBreakdown.some(pb => pb.key.toLowerCase().includes(p.toLowerCase()) || pb.name.toLowerCase().includes(p.toLowerCase()));
-              return (
-                <span 
-                  key={p} 
-                  style={{ 
-                    fontSize: '0.6rem', 
-                    padding: '0.05rem 0.3rem', 
-                    borderRadius: '2px',
-                    background: isConn ? '#14532d' : '#080d08',
-                    color: isConn ? '#4ade80' : '#274227',
-                    border: isConn ? '1px solid #22c55e' : '1px solid #142214'
-                  }}
-                >
-                  {p}
-                </span>
-              );
-            })}
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-green-bright)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <span>Manage handles</span>
+            <ArrowUpRight size={13} />
           </div>
         </div>
 
         {/* Metric 4: Scheduled Contests */}
         <div 
           className="glass-card glass-card-interactive" 
-          style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
+          style={{ padding: '1rem 1.15rem', cursor: 'pointer' }}
           onClick={() => onNavigateToTab('contests')}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 600 }}>[CONTESTS]</span>
-            <Calendar size={14} color="#22c55e" />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Upcoming Contests</span>
+            <Calendar size={16} color="var(--accent-green)" />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.2rem' }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f0fdf4', letterSpacing: '-0.02em' }}>
+            <span style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
               {contests?.length || 0}
             </span>
-            <span style={{ fontSize: '0.72rem', color: '#4ade80' }}>upcoming</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>scheduled</span>
           </div>
-          <div style={{ fontSize: '0.68rem', color: '#22c55e', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            <span>view_schedule()</span>
-            <ArrowUpRight size={11} />
+          <div style={{ fontSize: '0.72rem', color: 'var(--accent-green-bright)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <span>View calendar</span>
+            <ArrowUpRight size={13} />
           </div>
         </div>
       </section>
 
-      {/* 2. Main 2-Column Responsive Layout (Utilizes both Left & Right screen area) */}
+      {/* 2. Main 2-Column Responsive Layout */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))',
-        gap: '0.85rem'
+        gap: '1rem'
       }}>
         
         {/* LEFT COLUMN: Platform Profiles & Mastered Concepts */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           
           {/* Section: Platform Profiles */}
-          <div className="glass-card" style={{ padding: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Terminal size={14} color="#22c55e" />
-                <h2 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f0fdf4' }}>
-                  CONNECTED_PROFILES
+          <div className="glass-card" style={{ padding: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Code2 size={16} color="var(--accent-green)" />
+                <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  Connected Profiles
                 </h2>
               </div>
-              <button className="btn btn-secondary btn-sm" onClick={onOpenHandleModal}>
-                edit_handles()
+              <button className="btn btn-secondary btn-sm" onClick={() => onNavigateToTab('verify')}>
+                Edit Handles
               </button>
             </div>
 
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '0.6rem'
+              gap: '0.75rem'
             }}>
               {platformBreakdown.map(p => (
                 <PlatformCard key={p.key} platform={p} />
               ))}
 
               {platformBreakdown.length === 0 && (
-                <div style={{ padding: '1.5rem', textAlign: 'center', gridColumn: '1 / -1', color: '#4ade80aa' }}>
-                  <p style={{ fontSize: '0.8rem', marginBottom: '0.75rem' }}>No handles linked yet.</p>
-                  <button className="btn btn-primary btn-sm" onClick={onOpenHandleModal}>
-                    link_handles()
+                <div style={{ padding: '2rem', textAlign: 'center', gridColumn: '1 / -1', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '0.85rem', marginBottom: '0.75rem' }}>No handles linked yet.</p>
+                  <button className="btn btn-primary btn-sm" onClick={() => onNavigateToTab('verify')}>
+                    Link Platform Handles
                   </button>
                 </div>
               )}
@@ -215,21 +200,21 @@ export default function Dashboard({
           </div>
 
           {/* Section: Mastered Concepts */}
-          <div className="glass-card" style={{ padding: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Cpu size={14} color="#22c55e" />
-                <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f0fdf4' }}>
-                  TOP_CONCEPTS_MATRIX
+          <div className="glass-card" style={{ padding: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Layers size={16} color="var(--accent-green)" />
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  Topic & Tag Breakdown
                 </h3>
               </div>
               <button className="btn btn-secondary btn-sm" onClick={() => onNavigateToTab('analytics')}>
-                analytics()
+                Analytics View
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-              {concepts.slice(0, 20).map(c => (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+              {concepts.slice(0, 24).map(c => (
                 <button
                   key={c.name}
                   className="concept-pill"
@@ -237,12 +222,13 @@ export default function Dashboard({
                 >
                   <span>{c.name}</span>
                   <span style={{
-                    background: '#166534',
-                    color: '#f0fdf4',
-                    padding: '0.05rem 0.3rem',
-                    borderRadius: '2px',
-                    fontSize: '0.65rem',
-                    fontWeight: 700
+                    background: 'var(--bg-main)',
+                    color: 'var(--accent-green-bright)',
+                    padding: '0.05rem 0.35rem',
+                    borderRadius: '4px',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    border: '1px solid var(--border-subtle)'
                   }}>
                     {c.count}
                   </span>
@@ -250,8 +236,8 @@ export default function Dashboard({
               ))}
 
               {concepts.length === 0 && (
-                <span style={{ color: '#4ade80aa', fontSize: '0.75rem' }}>
-                  Sync platform accounts to populate concept matrix.
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>
+                  Sync your platform accounts to populate topic tags.
                 </span>
               )}
             </div>
@@ -259,123 +245,115 @@ export default function Dashboard({
 
         </div>
 
-        {/* RIGHT COLUMN: Recent Solved Stream & Problem of the Day */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        {/* RIGHT COLUMN: Recent Solves & Daily Challenges */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           
-          {/* Section: Recent Submissions Stream */}
-          <div className="glass-card" style={{ padding: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <BookOpen size={14} color="#22c55e" />
-                <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f0fdf4' }}>
-                  RECENT_SUBMISSIONS_LOG
+          {/* Section: Recent Submissions */}
+          <div className="glass-card" style={{ padding: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Trophy size={16} color="var(--accent-green)" />
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  Recent Solves
                 </h3>
               </div>
               <button className="btn btn-secondary btn-sm" onClick={() => onNavigateToTab('problems')}>
-                all_problems({summary.totalSolved + summary.totalAttempted})
+                View All Problems
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              {recentProblems.map(p => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {recentProblems.map(prob => (
                 <div 
-                  key={p.id}
+                  key={prob.id}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0.45rem 0.65rem',
-                    background: '#080d08',
+                    padding: '0.55rem 0.75rem',
+                    background: 'var(--bg-secondary)',
                     borderRadius: 'var(--radius-sm)',
-                    border: '1px solid #142214'
+                    border: '1px solid var(--border-subtle)',
+                    gap: '0.5rem'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                    <span className={`badge tag-${p.platformKey}`} style={{ fontSize: '0.62rem', padding: '0.1rem 0.35rem' }}>
-                      {p.platformKey?.toUpperCase()}
-                    </span>
-                    <div style={{ minWidth: 0 }}>
-                      <a 
-                        href={p.url} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        style={{ 
-                          color: '#f0fdf4', 
-                          textDecoration: 'none', 
-                          fontSize: '0.78rem', 
-                          fontWeight: 600,
-                          display: 'block',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}
-                        title={p.title}
-                      >
-                        {p.title}
-                      </a>
-                      <span style={{ fontSize: '0.65rem', color: '#4ade80aa' }}>
-                        {p.concepts?.slice(0, 2).join(', ')}
-                      </span>
-                    </div>
+                    <PlatformIcon platformKey={prob.platformKey} size={16} />
+                    <a 
+                      href={prob.url} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      style={{ 
+                        color: 'var(--text-main)', 
+                        textDecoration: 'none', 
+                        fontSize: '0.82rem', 
+                        fontWeight: 600,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                      title={prob.title}
+                    >
+                      {prob.title}
+                    </a>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
-                    {p.rating && (
-                      <span className="badge badge-rating" style={{ fontSize: '0.65rem', padding: '0.05rem 0.35rem' }}>
-                        {p.rating}
-                      </span>
-                    )}
-                    <span className={`badge badge-${p.verdict.toLowerCase()}`} style={{ fontSize: '0.65rem', padding: '0.05rem 0.35rem' }}>
-                      {p.verdict}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                    <span className={`badge badge-${prob.difficulty.toLowerCase()}`} style={{ fontSize: '0.65rem' }}>
+                      {prob.difficulty}
+                    </span>
+                    <span className={`badge ${prob.verdict === 'Solved' ? 'badge-solved' : 'badge-attempted'}`} style={{ fontSize: '0.65rem' }}>
+                      {prob.verdict}
                     </span>
                   </div>
                 </div>
               ))}
 
               {recentProblems.length === 0 && (
-                <p style={{ color: '#4ade80aa', fontSize: '0.75rem', textAlign: 'center', padding: '1rem' }}>
-                  No submissions yet. Trigger sync to fetch live problems.
-                </p>
+                <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '0.8rem' }}>No problems tracked yet. Hit "Sync Solves" to fetch your history.</p>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Section: POTD Daily Challenges */}
-          {potdList && potdList.length > 0 && (
-            <div className="glass-card" style={{ padding: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Flame size={14} color="#22c55e" />
-                  <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f0fdf4' }}>
-                    POTD_DAILY_FEED
+          {/* Section: Today's Daily Challenges Preview */}
+          {potdList.length > 0 && (
+            <div className="glass-card" style={{ padding: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Flame size={16} color="#fb923c" />
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                    Daily Coding Challenges (POTD)
                   </h3>
                 </div>
                 <button className="btn btn-secondary btn-sm" onClick={() => onNavigateToTab('potd')}>
-                  potd_hub()
+                  POTD Hub
                 </button>
               </div>
 
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '0.5rem'
+                gap: '0.65rem'
               }}>
                 {potdList.slice(0, 4).map(item => (
                   <div 
                     key={item.id} 
                     className="glass-card"
-                    style={{ padding: '0.65rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#080d08' }}
+                    style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'var(--bg-secondary)' }}
                   >
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                        <span className={`badge tag-${item.platformKey}`} style={{ fontSize: '0.62rem', padding: '0.05rem 0.3rem' }}>
-                          {item.platform}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                          <PlatformIcon platformKey={item.platformKey} size={14} />
+                          <span>{item.platform}</span>
                         </span>
-                        <span className={`badge badge-${item.difficulty.toLowerCase()}`} style={{ fontSize: '0.62rem', padding: '0.05rem 0.3rem' }}>
+                        <span className={`badge badge-${item.difficulty.toLowerCase()}`} style={{ fontSize: '0.65rem' }}>
                           {item.difficulty}
                         </span>
                       </div>
-                      <h4 style={{ fontSize: '0.78rem', fontWeight: 600, color: '#f0fdf4', marginBottom: '0.4rem', lineHeight: 1.3 }}>
+                      <h4 style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem', lineHeight: 1.3 }}>
                         {item.title}
                       </h4>
                     </div>
@@ -384,10 +362,10 @@ export default function Dashboard({
                       target="_blank" 
                       rel="noreferrer"
                       className="btn btn-primary btn-sm"
-                      style={{ width: '100%', justifyContent: 'space-between', fontSize: '0.68rem', padding: '0.2rem 0.45rem' }}
+                      style={{ width: '100%', justifyContent: 'space-between', fontSize: '0.72rem' }}
                     >
-                      <span>solve()</span>
-                      <ExternalLink size={11} />
+                      <span>Solve Problem</span>
+                      <ExternalLink size={12} />
                     </a>
                   </div>
                 ))}
@@ -407,15 +385,18 @@ function PlatformCard({ platform }) {
   const { name, handle, rating, maxRating, rank, solved, easy, medium, hard, key } = platform;
 
   return (
-    <div className="glass-card" style={{ padding: '0.75rem', background: '#080d08' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-        <div>
-          <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f0fdf4' }}>{name}</h4>
-          <span style={{ fontSize: '0.72rem', color: '#22c55e' }}>
-            @{handle}
-          </span>
+    <div className="glass-card" style={{ padding: '0.85rem', background: 'var(--bg-secondary)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+          <PlatformIcon platformKey={key} size={18} />
+          <div>
+            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>{name}</h4>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              @{handle}
+            </span>
+          </div>
         </div>
-        <span className={`badge tag-${key}`} style={{ fontSize: '0.62rem' }}>
+        <span className={`badge tag-${key}`} style={{ fontSize: '0.65rem' }}>
           {rank || 'ACTIVE'}
         </span>
       </div>
@@ -424,21 +405,21 @@ function PlatformCard({ platform }) {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: '0.5rem',
-        padding: '0.45rem 0.6rem',
-        background: '#0d160d',
+        padding: '0.5rem 0.65rem',
+        background: 'var(--bg-main)',
         borderRadius: 'var(--radius-sm)',
         marginBottom: '0.5rem',
-        border: '1px solid #142214'
+        border: '1px solid var(--border-subtle)'
       }}>
         <div>
-          <span style={{ fontSize: '0.65rem', color: '#86efac' }}>rating</span>
-          <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f0fdf4' }}>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>Rating</span>
+          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>
             {rating > 0 ? rating.toLocaleString() : '---'}
           </div>
         </div>
         <div>
-          <span style={{ fontSize: '0.65rem', color: '#86efac' }}>solved</span>
-          <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#22c55e' }}>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>Solved</span>
+          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-green-bright)' }}>
             {solved.toLocaleString()}
           </div>
         </div>
@@ -446,31 +427,31 @@ function PlatformCard({ platform }) {
 
       {/* Difficulty Breakdown Bar */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', marginBottom: '0.2rem', color: '#4ade80aa' }}>
-          <span>E:{easy}</span>
-          <span>M:{medium}</span>
-          <span>H:{hard}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', marginBottom: '0.2rem', color: 'var(--text-dim)' }}>
+          <span>E: {easy}</span>
+          <span>M: {medium}</span>
+          <span>H: {hard}</span>
         </div>
         <div className="progress-bar-bg" style={{ height: '3px' }}>
           <div 
             className="progress-bar-fill" 
             style={{ 
               width: `${solved ? (easy / solved) * 100 : 33}%`, 
-              background: '#22c55e' 
+              background: '#10b981' 
             }} 
           />
           <div 
             className="progress-bar-fill" 
             style={{ 
               width: `${solved ? (medium / solved) * 100 : 33}%`, 
-              background: '#84cc16' 
+              background: '#f59e0b' 
             }} 
           />
           <div 
             className="progress-bar-fill" 
             style={{ 
               width: `${solved ? (hard / solved) * 100 : 34}%`, 
-              background: '#eab308' 
+              background: '#ef4444' 
             }} 
           />
         </div>
@@ -478,4 +459,3 @@ function PlatformCard({ platform }) {
     </div>
   );
 }
-

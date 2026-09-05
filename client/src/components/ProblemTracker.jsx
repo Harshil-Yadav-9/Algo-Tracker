@@ -11,9 +11,10 @@ import {
   LayoutGrid,
   ChevronLeft,
   ChevronRight,
-  Terminal,
-  RotateCcw
+  RotateCcw,
+  Code2
 } from 'lucide-react';
+import PlatformIcon from './PlatformIcons';
 
 export default function ProblemTracker({ 
   problems = [], 
@@ -120,76 +121,80 @@ export default function ProblemTracker({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       
-      {/* Header with Title & Stats */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Terminal size={16} color="#22c55e" />
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f0fdf4', letterSpacing: '-0.02em' }}>
-            PROBLEM_EXPLORER
-          </h2>
-          <span style={{ fontSize: '0.75rem', color: '#4ade80aa' }}>
-            [{filteredProblems.length} records]
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <button 
-            className={`btn btn-sm ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setViewMode('table')}
-            title="Table View"
-          >
-            <LayoutList size={13} />
-            <span>table</span>
-          </button>
-          <button 
-            className={`btn btn-sm ${viewMode === 'grid' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setViewMode('grid')}
-            title="Card Grid View"
-          >
-            <LayoutGrid size={13} />
-            <span>grid</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Control Bar */}
-      <div className="glass-card" style={{ padding: '0.75rem 1rem', background: '#090e09' }}>
+      {/* 1. Filter & Search Panel */}
+      <div className="glass-card" style={{ padding: '1.1rem 1.25rem' }}>
+        
+        {/* Top Filter Row: Search & View Toggle */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-          gap: '0.5rem',
-          marginBottom: '0.6rem'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          marginBottom: '0.85rem'
         }}>
-          {/* Search Input */}
-          <div style={{ position: 'relative', gridColumn: 'span 2' }}>
-            <Search size={14} color="#3b5a3b" style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)' }} />
+          {/* Search bar */}
+          <div style={{ position: 'relative', flexGrow: 1, minWidth: '260px' }}>
+            <Search 
+              size={16} 
+              color="var(--text-dim)" 
+              style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} 
+            />
             <input 
               type="text"
-              placeholder="grep query (title, ID, concept)..."
+              placeholder="Search problems by name, tag, or ID..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="input-field"
-              style={{ paddingLeft: '2rem', fontSize: '0.78rem' }}
+              style={{ paddingLeft: '2.25rem' }}
             />
           </div>
 
+          {/* View Mode Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <button
+              className={`btn btn-sm ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setViewMode('table')}
+              title="Table View"
+            >
+              <LayoutList size={14} />
+              <span>Table</span>
+            </button>
+            <button
+              className={`btn btn-sm ${viewMode === 'grid' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setViewMode('grid')}
+              title="Grid Cards View"
+            >
+              <LayoutGrid size={14} />
+              <span>Grid</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Filter Dropdowns Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '0.5rem',
+          marginBottom: '0.85rem'
+        }}>
           {/* Platform Filter */}
           <div>
             <select 
               value={selectedPlatform} 
               onChange={(e) => { setSelectedPlatform(e.target.value); setCurrentPage(1); }}
               className="input-field"
-              style={{ fontSize: '0.78rem' }}
+              style={{ fontSize: '0.8rem' }}
             >
-              <option value="all">platform: all</option>
-              <option value="codeforces">platform: codeforces</option>
-              <option value="leetcode">platform: leetcode</option>
-              <option value="atcoder">platform: atcoder</option>
-              <option value="codechef">platform: codechef</option>
-              <option value="gfg">platform: gfg</option>
-              <option value="hackerrank">platform: hackerrank</option>
+              <option value="all">All Platforms</option>
+              <option value="codeforces">Codeforces</option>
+              <option value="leetcode">LeetCode</option>
+              <option value="atcoder">AtCoder</option>
+              <option value="codechef">CodeChef</option>
+              <option value="gfg">GeeksforGeeks</option>
+              <option value="hackerrank">HackerRank</option>
             </select>
           </div>
 
@@ -199,11 +204,11 @@ export default function ProblemTracker({
               value={selectedVerdict} 
               onChange={(e) => { setSelectedVerdict(e.target.value); setCurrentPage(1); }}
               className="input-field"
-              style={{ fontSize: '0.78rem' }}
+              style={{ fontSize: '0.8rem' }}
             >
-              <option value="all">verdict: all</option>
-              <option value="solved">verdict: solved</option>
-              <option value="attempted">verdict: attempted</option>
+              <option value="all">All Statuses</option>
+              <option value="solved">Solved Only</option>
+              <option value="attempted">Attempted Only</option>
             </select>
           </div>
 
@@ -213,12 +218,12 @@ export default function ProblemTracker({
               value={selectedDifficulty} 
               onChange={(e) => { setSelectedDifficulty(e.target.value); setCurrentPage(1); }}
               className="input-field"
-              style={{ fontSize: '0.78rem' }}
+              style={{ fontSize: '0.8rem' }}
             >
-              <option value="all">difficulty: all</option>
-              <option value="easy">diff: easy</option>
-              <option value="medium">diff: medium</option>
-              <option value="hard">diff: hard</option>
+              <option value="all">All Difficulties</option>
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
             </select>
           </div>
 
@@ -228,9 +233,9 @@ export default function ProblemTracker({
               value={selectedConcept} 
               onChange={(e) => { setSelectedConcept(e.target.value); setCurrentPage(1); }}
               className="input-field"
-              style={{ fontSize: '0.78rem' }}
+              style={{ fontSize: '0.8rem' }}
             >
-              <option value="all">concept: all</option>
+              <option value="all">All Topics</option>
               {concepts.map(c => (
                 <option key={c.name} value={c.name}>{c.name} ({c.count})</option>
               ))}
@@ -243,12 +248,12 @@ export default function ProblemTracker({
               value={sortBy} 
               onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
               className="input-field"
-              style={{ fontSize: '0.78rem' }}
+              style={{ fontSize: '0.8rem' }}
             >
-              <option value="newest">sort: newest</option>
-              <option value="oldest">sort: oldest</option>
-              <option value="rating-desc">sort: rating_desc</option>
-              <option value="rating-asc">sort: rating_asc</option>
+              <option value="newest">Newest Solved</option>
+              <option value="oldest">Oldest First</option>
+              <option value="rating-desc">Rating: High to Low</option>
+              <option value="rating-asc">Rating: Low to High</option>
             </select>
           </div>
         </div>
@@ -260,10 +265,10 @@ export default function ProblemTracker({
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '0.5rem',
-          paddingTop: '0.5rem',
-          borderTop: '1px solid #142214'
+          paddingTop: '0.65rem',
+          borderTop: '1px solid var(--border-subtle)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
             {/* Bookmarked Filter Pill */}
             <button
               onClick={() => { setOnlyBookmarked(!onlyBookmarked); setCurrentPage(1); }}
@@ -271,23 +276,22 @@ export default function ProblemTracker({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
-                padding: '0.2rem 0.55rem',
+                padding: '0.25rem 0.65rem',
                 borderRadius: 'var(--radius-sm)',
-                fontSize: '0.72rem',
+                fontSize: '0.75rem',
                 fontWeight: 600,
                 cursor: 'pointer',
-                background: onlyBookmarked ? '#14532d' : '#0a100a',
-                color: onlyBookmarked ? '#4ade80' : '#86efac99',
-                border: onlyBookmarked ? '1px solid #22c55e' : '1px solid #192a19',
-                fontFamily: 'var(--font-mono)'
+                background: onlyBookmarked ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-main)',
+                color: onlyBookmarked ? 'var(--accent-green-bright)' : 'var(--text-muted)',
+                border: onlyBookmarked ? '1px solid var(--accent-green)' : '1px solid var(--border-subtle)'
               }}
             >
-              {onlyBookmarked ? <BookmarkCheck size={12} /> : <Bookmark size={12} />}
-              <span>bookmarks ({Object.values(bookmarks).filter(Boolean).length})</span>
+              {onlyBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+              <span>Bookmarks ({Object.values(bookmarks).filter(Boolean).length})</span>
             </button>
 
-            <span style={{ fontSize: '0.72rem', color: '#4ade80aa' }}>
-              page {currentPage} of {totalPages}
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+              Showing {filteredProblems.length} problem{filteredProblems.length !== 1 ? 's' : ''} (Page {currentPage} of {totalPages})
             </span>
           </div>
 
@@ -295,27 +299,27 @@ export default function ProblemTracker({
           <button 
             className="btn btn-secondary btn-sm"
             onClick={handleResetFilters}
-            style={{ fontSize: '0.7rem', padding: '0.15rem 0.45rem' }}
+            style={{ fontSize: '0.72rem' }}
           >
-            <RotateCcw size={11} />
-            <span>reset_filters</span>
+            <RotateCcw size={12} />
+            <span>Reset Filters</span>
           </button>
         </div>
       </div>
 
-      {/* Table View (Dense Terminal Table) */}
+      {/* Table View */}
       {viewMode === 'table' && (
-        <div className="glass-card" style={{ overflowX: 'auto', padding: '0.25rem', background: '#090e09' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px', fontSize: '0.78rem' }}>
+        <div className="glass-card" style={{ overflowX: 'auto', padding: '0.5rem', background: 'var(--bg-card)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '750px', fontSize: '0.82rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #192a19', color: '#86efac', fontSize: '0.7rem', textTransform: 'uppercase' }}>
-                <th style={{ padding: '0.5rem 0.75rem' }}>Platform</th>
-                <th style={{ padding: '0.5rem 0.75rem' }}>Problem Title</th>
-                <th style={{ padding: '0.5rem 0.75rem' }}>Diff / Rating</th>
-                <th style={{ padding: '0.5rem 0.75rem' }}>Concepts</th>
-                <th style={{ padding: '0.5rem 0.75rem' }}>Verdict</th>
-                <th style={{ padding: '0.5rem 0.75rem' }}>Date</th>
-                <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>Actions</th>
+              <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-dim)', fontSize: '0.72rem' }}>
+                <th style={{ padding: '0.65rem 0.85rem' }}>Platform</th>
+                <th style={{ padding: '0.65rem 0.85rem' }}>Problem Title</th>
+                <th style={{ padding: '0.65rem 0.85rem' }}>Difficulty / Rating</th>
+                <th style={{ padding: '0.65rem 0.85rem' }}>Topics</th>
+                <th style={{ padding: '0.65rem 0.85rem' }}>Status</th>
+                <th style={{ padding: '0.65rem 0.85rem' }}>Date</th>
+                <th style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -327,58 +331,53 @@ export default function ProblemTracker({
                   <tr 
                     key={p.id}
                     style={{
-                      borderBottom: '1px solid #101910',
-                      transition: 'background 0.1s ease'
+                      borderBottom: '1px solid var(--border-subtle)',
+                      transition: 'background 0.15s ease'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#0d160d'}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     {/* Platform */}
-                    <td style={{ padding: '0.45rem 0.75rem' }}>
-                      <span className={`badge tag-${p.platformKey}`} style={{ fontSize: '0.65rem' }}>
-                        {p.platformKey?.toUpperCase()}
+                    <td style={{ padding: '0.55rem 0.85rem' }}>
+                      <span className={`badge tag-${p.platformKey}`} style={{ fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <PlatformIcon platformKey={p.platformKey} size={14} />
+                        <span>{p.platformKey?.toUpperCase()}</span>
                       </span>
                     </td>
 
                     {/* Title & Link */}
-                    <td style={{ padding: '0.45rem 0.75rem', maxWidth: '320px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <td style={{ padding: '0.55rem 0.85rem', maxWidth: '340px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <a 
                           href={p.url} 
                           target="_blank" 
                           rel="noreferrer"
                           style={{
-                            color: '#f0fdf4',
+                            color: 'var(--text-main)',
                             fontWeight: 600,
                             textDecoration: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            whiteSpace: 'nowrap',
                             overflow: 'hidden',
-                            textOverflow: 'ellipsis'
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
                           }}
                           title={p.title}
                         >
-                          <span>{p.title}</span>
-                          <ExternalLink size={11} color="#22c55e" />
+                          {p.title}
+                        </a>
+                        <a href={p.url} target="_blank" rel="noreferrer" style={{ color: 'var(--text-dim)', flexShrink: 0 }}>
+                          <ExternalLink size={12} />
                         </a>
                       </div>
-                      {p.problemId && (
-                        <span style={{ fontSize: '0.65rem', color: '#4ade80aa' }}>
-                          #{p.problemId}
-                        </span>
-                      )}
                     </td>
 
                     {/* Difficulty / Rating */}
-                    <td style={{ padding: '0.45rem 0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <span className={`badge badge-${p.difficulty.toLowerCase()}`} style={{ fontSize: '0.65rem' }}>
+                    <td style={{ padding: '0.55rem 0.85rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span className={`badge badge-${p.difficulty.toLowerCase()}`} style={{ fontSize: '0.68rem' }}>
                           {p.difficulty}
                         </span>
                         {p.rating && (
-                          <span className="badge badge-rating" style={{ fontSize: '0.65rem' }}>
+                          <span className="badge badge-rating" style={{ fontSize: '0.68rem' }}>
                             {p.rating}
                           </span>
                         )}
@@ -386,10 +385,15 @@ export default function ProblemTracker({
                     </td>
 
                     {/* Concepts */}
-                    <td style={{ padding: '0.45rem 0.75rem', maxWidth: '240px' }}>
-                      <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                        {p.concepts?.slice(0, 3).map((c, i) => (
-                          <span key={i} className="concept-pill" style={{ fontSize: '0.65rem' }}>
+                    <td style={{ padding: '0.55rem 0.85rem', maxWidth: '240px' }}>
+                      <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                        {(p.concepts || []).slice(0, 3).map((c, i) => (
+                          <span 
+                            key={i} 
+                            className="concept-pill" 
+                            style={{ fontSize: '0.68rem', padding: '0.1rem 0.35rem' }}
+                            onClick={() => setSelectedConcept(c)}
+                          >
                             {c}
                           </span>
                         ))}
@@ -397,49 +401,47 @@ export default function ProblemTracker({
                     </td>
 
                     {/* Verdict */}
-                    <td style={{ padding: '0.45rem 0.75rem' }}>
-                      <span 
-                        className={`badge badge-${p.verdict.toLowerCase()}`} 
-                        style={{ fontSize: '0.65rem' }}
-                      >
+                    <td style={{ padding: '0.55rem 0.85rem' }}>
+                      <span className={`badge ${p.verdict === 'Solved' ? 'badge-solved' : 'badge-attempted'}`} style={{ fontSize: '0.68rem' }}>
                         {p.verdict === 'Solved' ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
                         <span>{p.verdict}</span>
                       </span>
                     </td>
 
                     {/* Date */}
-                    <td style={{ padding: '0.45rem 0.75rem', color: '#4ade80aa', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
-                      {p.date ? new Date(p.date).toLocaleDateString() : 'recent'}
+                    <td style={{ padding: '0.55rem 0.85rem', color: 'var(--text-dim)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                      {p.timeFormatted || (p.timeSeconds ? new Date(p.timeSeconds * 1000).toLocaleDateString() : '---')}
                     </td>
 
-                    {/* Actions: Bookmark & Notes */}
-                    <td style={{ padding: '0.45rem 0.75rem', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+                    {/* Actions */}
+                    <td style={{ padding: '0.55rem 0.85rem', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
                         <button
                           onClick={() => onToggleBookmark(p.id)}
                           style={{
                             background: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
-                            color: isBookmarked ? '#fde047' : '#274227',
+                            color: isBookmarked ? '#fbbf24' : 'var(--text-dim)',
                             padding: '0.2rem'
                           }}
-                          title={isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
+                          title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Problem'}
                         >
-                          {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+                          {isBookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
                         </button>
+
                         <button
                           onClick={() => onOpenNotesModal(p)}
                           style={{
                             background: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
-                            color: hasNotes ? '#4ade80' : '#274227',
+                            color: hasNotes ? 'var(--accent-green-bright)' : 'var(--text-dim)',
                             padding: '0.2rem'
                           }}
                           title={hasNotes ? 'View/Edit Note' : 'Add Note'}
                         >
-                          <FileEdit size={14} />
+                          <FileEdit size={16} />
                         </button>
                       </div>
                     </td>
@@ -449,8 +451,8 @@ export default function ProblemTracker({
 
               {paginatedProblems.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#4ade80aa' }}>
-                    No problems match your query filters.
+                  <td colSpan={7} style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No problems found matching your filters.
                   </td>
                 </tr>
               )}
@@ -459,12 +461,12 @@ export default function ProblemTracker({
         </div>
       )}
 
-      {/* Card Grid View */}
+      {/* Grid Cards View */}
       {viewMode === 'grid' && (
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '0.65rem'
+          gap: '0.85rem'
         }}>
           {paginatedProblems.map(p => {
             const isBookmarked = !!bookmarks[p.id];
@@ -474,39 +476,43 @@ export default function ProblemTracker({
               <div 
                 key={p.id}
                 className="glass-card"
-                style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#090e09' }}
+                style={{
+                  padding: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem',
+                  background: 'var(--bg-secondary)'
+                }}
               >
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                    <span className={`badge tag-${p.platformKey}`} style={{ fontSize: '0.65rem' }}>
-                      {p.platformKey?.toUpperCase()}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span className={`badge tag-${p.platformKey}`} style={{ fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <PlatformIcon platformKey={p.platformKey} size={14} />
+                      <span>{p.platformKey?.toUpperCase()}</span>
                     </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <span className={`badge badge-${p.difficulty.toLowerCase()}`} style={{ fontSize: '0.62rem' }}>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <span className={`badge badge-${p.difficulty.toLowerCase()}`} style={{ fontSize: '0.68rem' }}>
                         {p.difficulty}
                       </span>
                       {p.rating && (
-                        <span className="badge badge-rating" style={{ fontSize: '0.62rem' }}>
+                        <span className="badge badge-rating" style={{ fontSize: '0.68rem' }}>
                           {p.rating}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <h3 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.4rem', lineHeight: 1.3 }}>
-                    <a 
-                      href={p.url} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      style={{ color: '#f0fdf4', textDecoration: 'none' }}
-                    >
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', lineHeight: 1.35 }}>
+                    <a href={p.url} target="_blank" rel="noreferrer" style={{ color: 'var(--text-main)', textDecoration: 'none' }}>
                       {p.title}
                     </a>
                   </h3>
 
-                  <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginBottom: '0.6rem' }}>
-                    {p.concepts?.slice(0, 3).map((c, i) => (
-                      <span key={i} className="concept-pill" style={{ fontSize: '0.65rem' }}>
+                  <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                    {(p.concepts || []).slice(0, 4).map((c, i) => (
+                      <span key={i} className="concept-pill" style={{ fontSize: '0.68rem' }}>
                         {c}
                       </span>
                     ))}
@@ -517,34 +523,46 @@ export default function ProblemTracker({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  paddingTop: '0.4rem',
-                  borderTop: '1px solid #142214'
+                  paddingTop: '0.6rem',
+                  borderTop: '1px solid var(--border-subtle)'
                 }}>
-                  <span className={`badge badge-${p.verdict.toLowerCase()}`} style={{ fontSize: '0.65rem' }}>
+                  <span className={`badge ${p.verdict === 'Solved' ? 'badge-solved' : 'badge-attempted'}`} style={{ fontSize: '0.68rem' }}>
                     {p.verdict}
                   </span>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <button
                       onClick={() => onToggleBookmark(p.id)}
-                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: isBookmarked ? '#fde047' : '#274227' }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: isBookmarked ? '#fbbf24' : 'var(--text-dim)'
+                      }}
                     >
-                      {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+                      {isBookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
                     </button>
+
                     <button
                       onClick={() => onOpenNotesModal(p)}
-                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: hasNotes ? '#4ade80' : '#274227' }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: hasNotes ? 'var(--accent-green-bright)' : 'var(--text-dim)'
+                      }}
                     >
-                      <FileEdit size={14} />
+                      <FileEdit size={16} />
                     </button>
-                    <a
-                      href={p.url}
-                      target="_blank"
-                      rel="noreferrer"
+
+                    <a 
+                      href={p.url} 
+                      target="_blank" 
+                      rel="noreferrer" 
                       className="btn btn-secondary btn-sm"
-                      style={{ padding: '0.15rem 0.35rem', fontSize: '0.65rem' }}
+                      style={{ padding: '0.25rem 0.5rem' }}
                     >
-                      <ExternalLink size={10} />
+                      <ExternalLink size={12} />
                     </a>
                   </div>
                 </div>
@@ -559,56 +577,36 @@ export default function ProblemTracker({
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
+          justifyContent: 'center',
           gap: '0.5rem',
-          padding: '0.5rem 0.75rem',
-          background: '#090e09',
-          borderRadius: 'var(--radius-sm)',
-          border: '1px solid #142214'
+          padding: '1rem 0'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.72rem', color: '#4ade80aa' }}>page_size:</span>
-            <select 
-              value={pageSize} 
-              onChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setCurrentPage(1); }}
-              className="input-field"
-              style={{ width: '70px', padding: '0.15rem 0.35rem', fontSize: '0.72rem' }}
-            >
-              <option value={15}>15</option>
-              <option value={30}>30</option>
-              <option value={60}>60</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            style={{ opacity: currentPage === 1 ? 0.5 : 1 }}
+          >
+            <ChevronLeft size={14} />
+            <span>Previous</span>
+          </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <button 
-              className="btn btn-secondary btn-sm"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft size={13} />
-              <span>prev</span>
-            </button>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', padding: '0 0.5rem' }}>
+            Page <strong style={{ color: 'var(--text-main)' }}>{currentPage}</strong> of <strong style={{ color: 'var(--text-main)' }}>{totalPages}</strong>
+          </span>
 
-            <span style={{ fontSize: '0.75rem', color: '#f0fdf4', padding: '0 0.35rem' }}>
-              {currentPage} / {totalPages}
-            </span>
-
-            <button 
-              className="btn btn-secondary btn-sm"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              <span>next</span>
-              <ChevronRight size={13} />
-            </button>
-          </div>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            style={{ opacity: currentPage === totalPages ? 0.5 : 1 }}
+          >
+            <span>Next</span>
+            <ChevronRight size={14} />
+          </button>
         </div>
       )}
 
     </div>
   );
 }
-
