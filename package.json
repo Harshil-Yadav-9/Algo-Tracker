@@ -1,0 +1,33 @@
+{
+  "name": "algotracker",
+  "version": "2.0.0",
+  "description": "Multi-Platform Competitive Programming & Problem Tracker (Codeforces, LeetCode, AtCoder, CodeChef, GFG, HackerRank)",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "build": "npm --prefix client run build",
+    "postinstall": "npm --prefix server install && npm --prefix client install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "server": "npm --prefix server start",
+    "client": "npm --prefix client run dev"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "competitive-programming",
+    "codeforces",
+    "leetcode",
+    "atcoder",
+    "codechef",
+    "geeksforgeeks",
+    "hackerrank",
+    "problem-tracker",
+    "mongodb",
+    "real-time-sync"
+  ],
+  "author": "",
+  "license": "MIT"
+}

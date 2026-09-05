@@ -1,0 +1,365 @@
+/* AlgoTracker Terminal Design System - Pure Black & Green Matrix Theme */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+:root {
+  /* Black & Green Color Palette */
+  --bg-main: #060906;
+  --bg-secondary: #0a0f0a;
+  --bg-card: #0c140c;
+  --bg-card-hover: #101c10;
+  --bg-surface: #121e12;
+  --bg-elevated: #162616;
+  
+  --border-subtle: #192a19;
+  --border-card: #1f361f;
+  --border-focus: #22c55e;
+  --border-active: #16a34a;
+
+  --text-main: #f0fdf4;
+  --text-muted: #86efac;
+  --text-dim: #4ade80aa;
+  --text-dimmer: #166534;
+  
+  /* Matrix & Terminal Green Accents (NO blue, NO pink) */
+  --accent-green: #22c55e;
+  --accent-green-bright: #4ade80;
+  --accent-green-dark: #15803d;
+  --accent-green-dim: #166534;
+  --accent-green-glow: rgba(34, 197, 94, 0.15);
+  
+  --accent-emerald: #10b981;
+  --accent-lime: #84cc16;
+  --accent-amber: #eab308;
+  --accent-red: #ef4444;
+
+  /* Terminal Platform Accents */
+  --cf-color: #4ade80;
+  --lc-color: #22c55e;
+  --ac-color: #86efac;
+  --cc-color: #84cc16;
+  --gfg-color: #10b981;
+  --hr-color: #22c55e;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-full: 9999px;
+
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.7);
+
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  --font-sans: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  background-image: 
+    linear-gradient(to right, rgba(34, 197, 94, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Monospace Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: #192a19;
+  border-radius: var(--radius-sm);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-green);
+}
+
+/* High-Density Full-Width Layout Container */
+.app-container {
+  max-width: 1620px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem 2rem 1rem;
+}
+
+/* Sharp Terminal Card */
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--border-focus);
+}
+
+.glass-card-interactive:hover {
+  border-color: var(--accent-green-bright);
+  background: var(--bg-card-hover);
+}
+
+/* Typography Helpers */
+.title-gradient {
+  color: var(--accent-green-bright);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Terminal Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.btn-primary {
+  background: #15803d;
+  color: #f0fdf4;
+  border-color: #22c55e;
+}
+.btn-primary:hover {
+  background: #16a34a;
+  border-color: #4ade80;
+  color: #ffffff;
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  border-color: var(--border-subtle);
+}
+.btn-secondary:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-focus);
+  color: var(--accent-green-bright);
+}
+
+.btn-outline-cyan, .btn-outline-green {
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--accent-green);
+  border-color: var(--border-card);
+}
+.btn-outline-cyan:hover, .btn-outline-green:hover {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: var(--accent-green);
+  color: var(--accent-green-bright);
+}
+
+.btn-sm {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.72rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Terminal Badges & Tags */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+}
+
+.badge-easy {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid #16a34a;
+}
+
+.badge-medium {
+  background: rgba(132, 204, 22, 0.12);
+  color: #a3e635;
+  border: 1px solid #65a30d;
+}
+
+.badge-hard {
+  background: rgba(234, 179, 8, 0.12);
+  color: #fde047;
+  border: 1px solid #ca8a04;
+}
+
+.badge-solved {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid #16a34a;
+}
+
+.badge-attempted {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid #dc2626;
+}
+
+.badge-rating {
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--accent-green-bright);
+  border: 1px solid var(--border-card);
+  font-family: var(--font-mono);
+}
+
+/* Platform Tag Badges (Black & Green Theme) */
+.tag-cf { color: #4ade80; background: #0c180c; border: 1px solid #1f3a1f; }
+.tag-lc { color: #22c55e; background: #0c180c; border: 1px solid #1f3a1f; }
+.tag-ac { color: #86efac; background: #0c180c; border: 1px solid #1f3a1f; }
+.tag-cc { color: #a3e635; background: #0c180c; border: 1px solid #1f3a1f; }
+.tag-gfg { color: #10b981; background: #0c180c; border: 1px solid #1f3a1f; }
+.tag-hr { color: #4ade80; background: #0c180c; border: 1px solid #1f3a1f; }
+
+/* Concept Tag Pill */
+.concept-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  padding: 0.18rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  border: 1px solid var(--border-subtle);
+  transition: all 0.12s ease;
+  cursor: pointer;
+}
+
+.concept-pill:hover {
+  background: var(--bg-elevated);
+  color: #ffffff;
+  border-color: var(--accent-green);
+}
+
+.concept-pill.active {
+  background: #14532d;
+  color: #f0fdf4;
+  border-color: var(--accent-green);
+  font-weight: 700;
+}
+
+/* Terminal Pulse */
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin-animation, .animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: #090e09;
+  border: 1px solid var(--border-focus);
+  border-radius: var(--radius-md);
+  max-width: 620px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+}
+
+/* Terminal Form Inputs */
+.input-field {
+  width: 100%;
+  background: #080d08;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.75rem;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  transition: border-color 0.15s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 1px var(--accent-green);
+}
+
+.input-field::placeholder {
+  color: #3b5a3b;
+}
+
+/* Progress bar */
+.progress-bar-bg {
+  width: 100%;
+  height: 4px;
+  background: #121e12;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+}
+.progress-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Table styling */
+table {
+  font-family: var(--font-mono);
+}
+th {
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 0 0.5rem 1.5rem 0.5rem;
+  }
+}
+
