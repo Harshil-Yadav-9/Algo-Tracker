@@ -12,6 +12,7 @@ import {
   Code2
 } from 'lucide-react';
 import PlatformIcon from './PlatformIcons';
+import DailySolveHeatmap from './DailySolveHeatmap';
 
 export default function Dashboard({ 
   syncData, 
@@ -154,6 +155,15 @@ export default function Dashboard({
           </div>
         </div>
       </section>
+
+      {/* Interactive Daily Problem Solving Heatmap & Day Inspector */}
+      <DailySolveHeatmap 
+        problems={syncData?.problems || []} 
+        summary={summary}
+        platformBreakdown={platformBreakdown}
+        concepts={concepts}
+        title="Daily Problem Solving Activity Heatmap" 
+      />
 
       {/* 2. Main 2-Column Responsive Layout */}
       <div style={{

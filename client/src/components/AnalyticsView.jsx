@@ -19,10 +19,11 @@ import {
   Target, 
   Zap, 
   TrendingUp, 
-  Cpu,
-  ArrowRight,
-  Terminal
+  Cpu, 
+  ArrowRight, 
+  Terminal 
 } from 'lucide-react';
+import DailySolveHeatmap from './DailySolveHeatmap';
 
 // Register ChartJS plugins
 ChartJS.register(
@@ -284,6 +285,14 @@ export default function AnalyticsView({ syncData, onSelectConcept }) {
           </div>
         </div>
       </div>
+
+      {/* Daily Submission Activity Heatmap & Day Inspector */}
+      <DailySolveHeatmap 
+        problems={syncData?.problems || []} 
+        summary={summary}
+        platformBreakdown={platformBreakdown}
+        title="Platform Submission Heatmap & Day Inspector" 
+      />
 
     </div>
   );

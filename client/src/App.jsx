@@ -663,6 +663,7 @@ export default function App() {
         {activeTab === 'admin' && isAdmin && (
           <AdminPanel 
             token={token}
+            syncData={syncData}
             onInspectUser={handleInspectUser}
             onSyncCustomHandles={handleSyncCustomHandles}
           />

@@ -101,6 +101,17 @@ router.post('/sync', optionalAuth, async (req, res) => {
         totalHard += (data.stats?.hard || 0);
 
         if (Array.isArray(data.problems)) {
+          // Normalize and enrich concepts for each problem so problem.concepts contains canonical concept categories as well
+          data.problems.forEach(prob => {
+            if (Array.isArray(prob.concepts)) {
+              const enriched = new Set(prob.concepts);
+              prob.concepts.forEach(c => {
+                const norm = normalizeTagName(c);
+                if (norm) enriched.add(norm);
+              });
+              prob.concepts = Array.from(enriched);
+            }
+          });
           allProblems.push(...data.problems);
         }
 
@@ -156,7 +167,9 @@ router.post('/sync', optionalAuth, async (req, res) => {
       }
 
       // Clean Atomic Save: Replaces previous user problem records with fresh current submissions in MongoDB
-      await ProblemStore.saveUserProblems(userId, allProblems);
+      if (allProblems.length > 0 || prevProblems.length === 0) {
+        await ProblemStore.saveUserProblems(userId, allProblems);
+      }
 
       // Update user summary stats in MongoDB
       await UserStore.updateById(userId, {
@@ -247,20 +260,23 @@ router.get('/potd', async (req, res) => {
 
 // Helper: Normalize concept tag names across platforms
 function normalizeTagName(tag) {
-  const t = tag.trim();
+  if (!tag) return '';
+  const t = String(tag).trim();
   const lower = t.toLowerCase();
 
   if (lower.includes('dynamic programming') || lower === 'dp') return 'Dynamic Programming';
-  if (lower.includes('graph') || lower.includes('dfs') || lower.includes('bfs') || lower.includes('shortest paths')) return 'Graphs & Trees';
+  if (lower.includes('tree') || lower.includes('graph') || lower.includes('dfs') || lower.includes('bfs') || lower.includes('shortest path') || lower.includes('dijkstra')) return 'Graphs & Trees';
   if (lower.includes('binary search')) return 'Binary Search';
   if (lower.includes('greedy')) return 'Greedy';
-  if (lower.includes('math') || lower.includes('number theory') || lower.includes('combinatorics')) return 'Math & Number Theory';
-  if (lower.includes('data structures') || lower.includes('dsu') || lower.includes('segment tree')) return 'Data Structures';
-  if (lower.includes('string') || lower.includes('hashing')) return 'Strings & Hashing';
-  if (lower.includes('bit') || lower.includes('bit manipulation')) return 'Bit Manipulation';
+  if (lower.includes('math') || lower.includes('number theory') || lower.includes('combinatorics') || lower.includes('probabilities') || lower.includes('geometry') || lower.includes('matrix') || lower.includes('matrices')) return 'Math & Number Theory';
+  if (lower.includes('data structures') || lower.includes('dsu') || lower.includes('segment tree') || lower.includes('fenwick') || lower.includes('heap') || lower.includes('priority queue') || lower.includes('stack') || lower.includes('queue')) return 'Data Structures';
+  if (lower.includes('string') || lower.includes('hashing') || lower.includes('trie')) return 'Strings & Hashing';
+  if (lower.includes('bit') || lower.includes('bit manipulation') || lower.includes('bitmasks')) return 'Bit Manipulation';
   if (lower.includes('two pointers') || lower.includes('sliding window')) return 'Two Pointers';
-  if (lower.includes('sort') || lower.includes('sortings')) return 'Sorting & Searching';
+  if (lower.includes('sort') || lower.includes('sortings') || lower.includes('divide and conquer')) return 'Sorting & Searching';
   if (lower.includes('recursion') || lower.includes('backtracking')) return 'Recursion & Backtracking';
+  if (lower.includes('implementation') || lower.includes('constructive')) return 'Implementation';
+  if (lower.includes('game') || lower.includes('games')) return 'Game Theory';
 
   // Capitalize title
   return t.charAt(0).toUpperCase() + t.slice(1);

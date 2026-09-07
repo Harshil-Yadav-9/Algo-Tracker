@@ -10,7 +10,10 @@ const activeTokens = new Map();
  */
 export function generateVerificationSession(userId, platform, handle) {
   const cleanPlatform = platform.toLowerCase().trim();
-  const cleanHandle = handle.trim();
+  let cleanHandle = handle.trim();
+  if (cleanPlatform === 'codeforces') {
+    cleanHandle = cleanHandle.replace(/^https?:\/\/(?:www\.)?codeforces\.com\/profile\//i, '').replace(/^\/+|\/+$/g, '').replace(/^@/, '').trim();
+  }
   const randomSuffix = crypto.randomBytes(3).toString('hex');
   const token = `algo-${cleanPlatform.slice(0, 2)}-${randomSuffix}-${Date.now().toString().slice(-4)}`;
   
@@ -137,7 +140,10 @@ export function getPlatformInstructions(platform, handle, token) {
  */
 export async function verifyPlatformBioLive(userId, platform, handle) {
   const cleanPlatform = platform.toLowerCase().trim();
-  const cleanHandle = handle.trim();
+  let cleanHandle = handle.trim();
+  if (cleanPlatform === 'codeforces') {
+    cleanHandle = cleanHandle.replace(/^https?:\/\/(?:www\.)?codeforces\.com\/profile\//i, '').replace(/^\/+|\/+$/g, '').replace(/^@/, '').trim();
+  }
   const sessionKey = `${userId}:${cleanPlatform}:${cleanHandle.toLowerCase()}`;
 
   const session = activeTokens.get(sessionKey);

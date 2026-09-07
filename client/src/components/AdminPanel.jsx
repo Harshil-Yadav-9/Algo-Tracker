@@ -14,8 +14,9 @@ import {
   Code2
 } from 'lucide-react';
 import PlatformIcon from './PlatformIcons';
+import DailySolveHeatmap from './DailySolveHeatmap';
 
-export default function AdminPanel({ token, onInspectUser, onSyncCustomHandles }) {
+export default function AdminPanel({ token, syncData, onInspectUser, onSyncCustomHandles }) {
   const [adminData, setAdminData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -23,9 +24,9 @@ export default function AdminPanel({ token, onInspectUser, onSyncCustomHandles }
 
   // Universal Handle Explorer state
   const [explorerHandles, setExplorerHandles] = useState({
-    codeforces: 'tourist',
-    leetcode: 'neal_wu',
-    atcoder: 'tourist',
+    codeforces: '',
+    leetcode: '',
+    atcoder: '',
     codechef: '',
     gfg: '',
     hackerrank: ''
@@ -239,6 +240,14 @@ export default function AdminPanel({ token, onInspectUser, onSyncCustomHandles }
             >
               Pro Preset
             </button>
+            <button 
+              type="button" 
+              className="btn btn-secondary btn-sm"
+              onClick={() => setExplorerHandles({ codeforces: '', leetcode: '', atcoder: '', codechef: '', gfg: '', hackerrank: '' })}
+              style={{ fontSize: '0.72rem' }}
+            >
+              Clear
+            </button>
           </div>
         </div>
 
@@ -278,6 +287,16 @@ export default function AdminPanel({ token, onInspectUser, onSyncCustomHandles }
           </button>
         </form>
       </div>
+
+      {/* Admin Inspected Activity Heatmap & Day Inspector */}
+      {syncData?.problems && syncData.problems.length > 0 && (
+        <DailySolveHeatmap 
+          problems={syncData.problems} 
+          summary={syncData.summary}
+          platformBreakdown={syncData.platformBreakdown || []}
+          title="Inspected Account Daily Problem Solving Activity" 
+        />
+      )}
 
       {/* Feature 2: User Accounts Directory */}
       <div className="glass-card" style={{ padding: '1.25rem 1.5rem' }}>
