@@ -64,51 +64,89 @@ async function fetchCfJson(url, retries = 2) {
   }
 }
 
+// In-memory cache for Codeforces profile statistics to prevent temporary CF rate limits or timeouts from resetting counts
+const cfProfileCache = new Map();
+
 /**
  * Fetch Codeforces profile page HTML to extract official solved counts and fallback info.
  * Codeforces profile page counts problems solved across all public, Gym, EDU, and group contests,
  * which may not be completely returned by the public user.status API endpoint.
  */
-async function fetchCfProfilePage(handle) {
-  try {
-    const res = await fetch(`https://codeforces.com/profile/${encodeURIComponent(handle)}`, {
-      headers: CF_HEADERS,
-      signal: AbortSignal.timeout(8000)
-    });
+async function fetchCfProfilePage(handle, retries = 2) {
+  const normHandle = handle.trim().toLowerCase();
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`https://codeforces.com/profile/${encodeURIComponent(handle)}`, {
+        headers: CF_HEADERS,
+        signal: AbortSignal.timeout(15000)
+      });
 
-    if (!res.ok) return null;
-    const html = await res.text();
+      if (!res.ok) {
+        if (attempt < retries && (res.status === 429 || res.status === 503)) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        throw new Error(`Profile HTTP ${res.status}`);
+      }
 
-    // 1. Solved for all time counter
-    const mAllTime = html.match(/class="_UserActivityFrame_counterValue">\s*(\d+)\s*problems?<\/div>\s*<div class="_UserActivityFrame_counterDescription">\s*solved for all time/i);
-    // 2. Solved for last year counter
-    const mLastYear = html.match(/class="_UserActivityFrame_counterValue">\s*(\d+)\s*problems?<\/div>\s*<div class="_UserActivityFrame_counterDescription">\s*solved for the last year/i);
-    // 3. Solved for last month counter
-    const mLastMonth = html.match(/class="_UserActivityFrame_counterValue">\s*(\d+)\s*problems?<\/div>\s*<div class="_UserActivityFrame_counterDescription">\s*solved for the last month/i);
+      const html = await res.text();
 
-    // 4. Fallback user details in case user.info API is blocked or down
-    const ratingM = html.match(/Contest rating:\s*<span[^>]*>(\d+)<\/span>/i) || html.match(/"rating":\s*(\d+)/i);
-    const maxRatingM = html.match(/max\.\s*([^,]+),\s*<span[^>]*>(\d+)<\/span>/i);
-    const rankM = html.match(/class="user-rank">\s*<span[^>]*>([^<]+)<\/span>/i) || html.match(/user-rank">\s*([^<]+)\s*</i);
-    const avatarM = html.match(/<div class="title-photo">[\s\S]*?<img src="([^"]+)"/i);
+      // 1. Solved for all time counter (multi-pattern fallback)
+      const mAllTime = html.match(/_UserActivityFrame_counterValue[^>]*>\s*(\d+)\s*problems?[\s\S]{0,180}?solved\s+for\s+all\s+time/i) ||
+                       html.match(/(\d+)\s*problems?\s*<\/div>\s*<div[^>]*>\s*solved\s+for\s+all\s+time/i) ||
+                       html.match(/class="_UserActivityFrame_counterValue">\s*(\d+)\s*problems?/i);
 
-    let avatar = avatarM ? avatarM[1] : null;
-    if (avatar && avatar.startsWith('//')) avatar = 'https:' + avatar;
+      // 2. Solved for last year counter
+      const mLastYear = html.match(/_UserActivityFrame_counterValue[^>]*>\s*(\d+)\s*problems?[\s\S]{0,180}?solved\s+for\s+the\s+last\s+year/i) ||
+                        html.match(/(\d+)\s*problems?\s*<\/div>\s*<div[^>]*>\s*solved\s+for\s+the\s+last\s+year/i);
 
-    return {
-      allTimeSolved: mAllTime ? parseInt(mAllTime[1], 10) : null,
-      lastYearSolved: mLastYear ? parseInt(mLastYear[1], 10) : null,
-      lastMonthSolved: mLastMonth ? parseInt(mLastMonth[1], 10) : null,
-      rating: ratingM ? parseInt(ratingM[1], 10) : null,
-      maxRating: maxRatingM ? parseInt(maxRatingM[2], 10) : null,
-      rank: rankM ? rankM[1].trim() : null,
-      maxRank: maxRatingM ? maxRatingM[1].trim() : null,
-      avatar
-    };
-  } catch (err) {
-    console.warn(`CF profile page fetch warning for ${handle}:`, err.message);
-    return null;
+      // 3. Solved for last month counter
+      const mLastMonth = html.match(/_UserActivityFrame_counterValue[^>]*>\s*(\d+)\s*problems?[\s\S]{0,180}?solved\s+for\s+the\s+last\s+month/i) ||
+                         html.match(/(\d+)\s*problems?\s*<\/div>\s*<div[^>]*>\s*solved\s+for\s+the\s+last\s+month/i);
+
+      // 4. Fallback user details in case user.info API is blocked or down
+      const ratingM = html.match(/Contest rating:\s*<span[^>]*>(\d+)<\/span>/i) || html.match(/"rating":\s*(\d+)/i);
+      const maxRatingM = html.match(/max\.\s*([^,]+),\s*<span[^>]*>(\d+)<\/span>/i);
+      const rankM = html.match(/class="user-rank">\s*<span[^>]*>([^<]+)<\/span>/i) || html.match(/user-rank">\s*([^<]+)\s*</i);
+      const avatarM = html.match(/<div class="title-photo">[\s\S]*?<img src="([^"]+)"/i);
+
+      let avatar = avatarM ? avatarM[1] : null;
+      if (avatar && avatar.startsWith('//')) avatar = 'https:' + avatar;
+
+      // 5. Calendar daily activity
+      let calendarDays = [];
+      const calMatch = html.match(/data:\s*({[\s\S]*?})\s*,\s*start_monday/i);
+      if (calMatch) {
+        calendarDays = [...calMatch[1].matchAll(/"(\d{4}-\d{2}-\d{2})":\s*{\s*items:\s*\[\s*(\d+)/g)]
+          .map(m => ({ dateKey: m[1], count: parseInt(m[2], 10) }));
+      }
+
+      const result = {
+        allTimeSolved: mAllTime ? parseInt(mAllTime[1], 10) : null,
+        lastYearSolved: mLastYear ? parseInt(mLastYear[1], 10) : null,
+        lastMonthSolved: mLastMonth ? parseInt(mLastMonth[1], 10) : null,
+        rating: ratingM ? parseInt(ratingM[1], 10) : null,
+        maxRating: maxRatingM ? parseInt(maxRatingM[2], 10) : null,
+        rank: rankM ? rankM[1].trim() : null,
+        maxRank: maxRatingM ? maxRatingM[1].trim() : null,
+        avatar,
+        calendarDays
+      };
+
+      cfProfileCache.set(normHandle, result);
+      return result;
+    } catch (err) {
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+      console.warn(`CF profile page fetch warning for ${handle}:`, err.message);
+      const cached = cfProfileCache.get(normHandle);
+      if (cached) return cached;
+      return null;
+    }
   }
+  return cfProfileCache.get(normHandle) || null;
 }
 
 export async function getCodeforcesData(handle) {
@@ -276,6 +314,8 @@ export async function getCodeforcesData(handle) {
         : Math.floor(Date.now() / 1000);
       const timeSpan = Math.max(86400 * 14, baseLatestTime - baseOldestTime);
 
+      const calDays = profileStats?.calendarDays || [];
+
       for (let i = 0; i < diff; i++) {
         let diffCategory = 'Medium';
         let estimatedRating = 1400;
@@ -290,10 +330,20 @@ export async function getCodeforcesData(handle) {
           estimatedRating = 1900;
         }
 
-        // Map timestamp smoothly across active solved timeline
-        const stepRatio = (i + 0.5) / diff;
-        const estTimeSeconds = Math.floor(baseOldestTime + stepRatio * timeSpan);
-        const estDate = new Date(estTimeSeconds * 1000).toISOString();
+        // Map timestamp using user's real calendar activity days if available, or smooth interpolation
+        let estTimeSeconds;
+        let estDate;
+        if (calDays.length > 0) {
+          const dayIdx = Math.floor((i / diff) * calDays.length);
+          const pickedDay = calDays[Math.min(dayIdx, calDays.length - 1)];
+          const d = new Date(pickedDay.dateKey + 'T12:00:00Z');
+          estTimeSeconds = Math.floor(d.getTime() / 1000);
+          estDate = d.toISOString();
+        } else {
+          const stepRatio = (i + 0.5) / diff;
+          estTimeSeconds = Math.floor(baseOldestTime + stepRatio * timeSpan);
+          estDate = new Date(estTimeSeconds * 1000).toISOString();
+        }
 
         const eduProblemKey = `GYM-EDU-${i + 1}`;
         uniqueProblemsMap.set(eduProblemKey, {
