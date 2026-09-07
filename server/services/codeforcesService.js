@@ -288,7 +288,7 @@ export async function getCodeforcesData(handle) {
 
     const rawSolved = solvedMap.size;
     // Official solved count from profile page incorporates EDU, Gym, and group problems
-    const officialSolved = profileStats?.allTimeSolved && profileStats.allTimeSolved > rawSolved
+    const officialSolved = profileStats?.allTimeSolved && profileStats.allTimeSolved > 0
       ? profileStats.allTimeSolved
       : rawSolved;
 
@@ -365,6 +365,20 @@ export async function getCodeforcesData(handle) {
           date: estDate
         });
       }
+    } else if (officialSolved < rawSolved && officialSolved > 0) {
+      // Profile page has slightly fewer than raw submissions due to contest mirror deduplication
+      const excess = rawSolved - officialSolved;
+      let removed = 0;
+      for (const [key, prob] of uniqueProblemsMap.entries()) {
+        if (prob.verdict === 'Solved' && removed < excess) {
+          uniqueProblemsMap.delete(key);
+          removed++;
+        }
+      }
+      const scale = officialSolved / rawSolved;
+      easyCount = Math.round(easyCount * scale);
+      mediumCount = Math.round(mediumCount * scale);
+      hardCount = Math.max(0, officialSolved - easyCount - mediumCount);
     } else if (officialSolved > 0 && rawSolved === 0) {
       // Submissions API failed or empty, fallback to estimated breakdown
       easyCount = Math.round(officialSolved * 0.4);

@@ -9,10 +9,12 @@ import apiRouter from './routes/api.js';
 import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Explicitly load .env from the server folder, fallback to root
+dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;

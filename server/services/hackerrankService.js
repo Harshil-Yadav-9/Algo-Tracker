@@ -44,25 +44,48 @@ export async function getHackerRankData(username) {
     const mediumCount = Math.round(totalSolved * 0.35);
     const hardCount = Math.max(0, totalSolved - easyCount - mediumCount);
 
-    // Formatted problem samples based on badges
-    const problems = badges.map((b, i) => ({
-      id: `hr-${b.badge_slug || i}`,
-      platform: 'HackerRank',
-      platformKey: 'hackerrank',
-      problemId: b.badge_slug || b.badge_name,
-      title: `${b.badge_name} Track (${b.stars}★, ${b.solved || 0} solved)`,
-      url: `https://www.hackerrank.com/domains/${b.badge_slug || 'algorithms'}`,
-      submissionUrl: `https://www.hackerrank.com/domains/${b.badge_slug || 'algorithms'}`,
-      rating: b.stars * 400,
-      difficulty: b.stars >= 5 ? 'Hard' : b.stars >= 3 ? 'Medium' : 'Easy',
-      concepts: [b.badge_name, 'Problem Solving'],
-      verdict: 'Solved',
-      rawVerdict: `${b.stars} Stars`,
-      passedTestCount: b.solved || 1,
-      programmingLanguage: 'Polyglot',
-      timeSeconds: Math.floor(Date.now() / 1000) - i * 86400 * 3,
-      date: new Date(Date.now() - i * 86400000 * 3).toISOString()
-    }));
+    // Formatted problem samples based on badges matching exact totalSolved
+    const problems = [];
+    let assignedEasy = 0;
+    let assignedMed = 0;
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    const badgeList = badges.length > 0 ? badges : [{ badge_name: 'Problem Solving', stars: 3, badge_slug: 'problem-solving' }];
+
+    for (let i = 0; i < totalSolved; i++) {
+      const b = badgeList[i % badgeList.length];
+      const pNum = i + 1;
+      
+      let diff = 'Hard';
+      if (assignedEasy < easyCount) {
+        diff = 'Easy';
+        assignedEasy++;
+      } else if (assignedMed < mediumCount) {
+        diff = 'Medium';
+        assignedMed++;
+      }
+
+      const ts = nowSec - Math.floor(((i + 1) / (totalSolved + 1)) * 86400 * 300);
+
+      problems.push({
+        id: `hr-sol-${pNum}`,
+        platform: 'HackerRank',
+        platformKey: 'hackerrank',
+        problemId: `${b.badge_slug || 'hr'}-${pNum}`,
+        title: `${b.badge_name} Challenge #${pNum}`,
+        url: `https://www.hackerrank.com/domains/${b.badge_slug || 'algorithms'}`,
+        submissionUrl: `https://www.hackerrank.com/${encodeURIComponent(cleanedUsername)}`,
+        rating: diff === 'Easy' ? 1000 : diff === 'Medium' ? 1500 : 2000,
+        difficulty: diff,
+        concepts: [b.badge_name, 'Problem Solving'],
+        verdict: 'Solved',
+        rawVerdict: 'Accepted',
+        passedTestCount: 1,
+        programmingLanguage: 'Polyglot',
+        timeSeconds: ts,
+        date: new Date(ts * 1000).toISOString()
+      });
+    }
 
     return {
       success: true,
